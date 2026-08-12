@@ -145,6 +145,8 @@ export function ImageCoordinateStage({
         className="w-full h-full object-contain pointer-events-none block"
         onLoad={calculateRect}
         draggable={false}
+        decoding="async"
+        fetchPriority="high"
       />
       
       {imageRect && markers.map((marker) => {

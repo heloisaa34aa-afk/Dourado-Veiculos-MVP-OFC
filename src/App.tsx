@@ -15,14 +15,14 @@ import { Car, LeadMessage, CarCategory, UserProfile } from './types';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import CarCard from './components/CarCard';
-import CarDetails from './components/CarDetails';
-import AdminPanel from './components/AdminPanel';
-import ClientArea from './components/ClientArea';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { PublicPromotion } from './components/PublicPromotion';
 import { Suspense, lazy } from 'react';
 
 const Vehicle360MobileCapture = lazy(() => import('./pages/Vehicle360MobileCapture'));
+const CarDetails = lazy(() => import('./components/CarDetails'));
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const ClientArea = lazy(() => import('./components/ClientArea'));
 const demoAdminEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_ADMIN === 'true';
 
 // Supabase services and hooks
@@ -33,6 +33,7 @@ import { useCategories } from './hooks/useCategories';
 import { vehicleService } from './services/vehicle.service';
 import { authService } from './services/auth.service';
 import { usePublicBanners } from './hooks/usePublicBanners';
+import { SalesAssistantChat } from './components/SalesAssistantChat';
 
 export default function App() {
   // Navigation states
@@ -152,6 +153,9 @@ export default function App() {
     updateVehicle, 
     deleteVehicle 
   } = useVehicles();
+  const chatVehicleId = location.pathname.match(/^\/veiculo\/([^/]+)/)?.[1];
+  const chatVehicle = chatVehicleId ? cars.find(car => car.id === decodeURIComponent(chatVehicleId)) : undefined;
+  const showSalesChat = !location.pathname.startsWith('/admin') && !isMobileCaptureRoute;
 
   const { 
     leads: messages, 
@@ -699,20 +703,24 @@ export default function App() {
           } />
 
           <Route path="/veiculo/:vehicleId" element={
-            <CarDetailsWrapper onSubmitLead={handleSubmitLead} />
+            <Suspense fallback={<RouteLoading label="Carregando detalhes do veículo..." />}>
+              <CarDetailsWrapper onSubmitLead={handleSubmitLead} />
+            </Suspense>
           } />
 
           <Route path="/admin/*" element={
             userProfile && userProfile.role === 'admin' ? (
-              <AdminPanel
-                cars={cars}
-                messages={messages}
-                onAddCar={handleAddCar}
-                onEditCar={handleEditCar}
-                onDeleteCar={handleDeleteCar}
-                onUpdateMessageStatus={handleUpdateMessageStatus}
-                onDeleteMessage={handleDeleteMessage}
-              />
+              <Suspense fallback={<RouteLoading label="Carregando painel administrativo..." dark />}>
+                <AdminPanel
+                  cars={cars}
+                  messages={messages}
+                  onAddCar={handleAddCar}
+                  onEditCar={handleEditCar}
+                  onDeleteCar={handleDeleteCar}
+                  onUpdateMessageStatus={handleUpdateMessageStatus}
+                  onDeleteMessage={handleDeleteMessage}
+                />
+              </Suspense>
             ) : (
               <div className="flex-1 flex items-center justify-center bg-slate-900 py-16 px-4 sm:px-6 lg:px-8">
                 <div className="max-w-md w-full space-y-8 bg-slate-950 p-8 sm:p-10 rounded-3xl border border-slate-850 shadow-2xl">
@@ -778,14 +786,16 @@ export default function App() {
           } />
 
           <Route path="/cliente/*" element={
-            <ClientArea
-              cars={cars}
-              userProfile={userProfile}
-              onLogin={handleLogin}
-              onLogout={handleLogout}
-              onSelectCar={handleSelectCarDetails}
-              onAdminToggle={() => navigate('/admin')}
-            />
+            <Suspense fallback={<RouteLoading label="Carregando sua área..." />}>
+              <ClientArea
+                cars={cars}
+                userProfile={userProfile}
+                onLogin={handleLogin}
+                onLogout={handleLogout}
+                onSelectCar={handleSelectCarDetails}
+                onAdminToggle={() => navigate('/admin')}
+              />
+            </Suspense>
           } />
 
           <Route path="/captura-360/:token" element={
@@ -800,6 +810,16 @@ export default function App() {
         </Routes>
       </div>
       {!isMobileCaptureRoute && <Footer onAdminClick={() => navigate('/admin')} />}
+      {showSalesChat && <SalesAssistantChat vehicle={chatVehicle} />}
+    </div>
+  );
+}
+
+function RouteLoading({ label, dark = false }: { label: string; dark?: boolean }) {
+  return (
+    <div className={`flex min-h-[55dvh] flex-1 flex-col items-center justify-center gap-4 ${dark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-600'}`}>
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-300 border-t-red-600" />
+      <p className="text-sm font-semibold">{label}</p>
     </div>
   );
 }

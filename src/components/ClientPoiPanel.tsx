@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useVehicle360 } from '../hooks/useVehicle360';
 import { ImageCoordinateStage } from './360/ImageCoordinateStage';
 import { ChevronLeft, ChevronRight, Play, Pause, AlertTriangle, Info, Maximize } from 'lucide-react';
 import { Vehicle360Hotspot, Vehicle360DamageMarker } from '../types';
 import { MarkerDetailModal } from './360/MarkerDetailModal';
+import { isImageDecoded, preloadFrameSequence, preloadImage } from '../utils/imagePreloader';
 
 interface ClientPoiPanelProps {
   vehicleId: string;
@@ -29,6 +30,34 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
 
   const [activePoi, setActivePoi] = useState<Vehicle360Hotspot | null>(null);
   const [activeDamage, setActiveDamage] = useState<Vehicle360DamageMarker | null>(null);
+  const [renderedFrame, setRenderedFrame] = useState(0);
+  const [frameReady, setFrameReady] = useState(false);
+  const requestedFrameRef = useRef(0);
+
+  const frameUrls = useMemo(() => project?.frames?.map(frame => frame.imageUrl) ?? [], [project]);
+
+  useEffect(() => {
+    setRenderedFrame(0);
+    setFrameReady(Boolean(frameUrls[0] && isImageDecoded(frameUrls[0])));
+    if (frameUrls.length) void preloadFrameSequence(frameUrls, 0);
+  }, [frameUrls]);
+
+  useEffect(() => {
+    const url = frameUrls[currentFrame];
+    if (!url) return;
+    requestedFrameRef.current = currentFrame;
+    if (isImageDecoded(url)) {
+      setRenderedFrame(currentFrame);
+      setFrameReady(true);
+      return;
+    }
+    void preloadImage(url).then(() => {
+      if (requestedFrameRef.current === currentFrame) {
+        setRenderedFrame(currentFrame);
+        setFrameReady(true);
+      }
+    }).catch(() => undefined);
+  }, [currentFrame, frameUrls]);
 
   if (loading) {
     return <div className="w-full h-full min-h-[300px] flex items-center justify-center bg-gray-50/50 animate-pulse text-gray-500 rounded-2xl">Carregando visão 360°...</div>;
@@ -38,23 +67,23 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
     return null;
   }
 
-  const currentFrameData = project.frames![currentFrame];
+  const currentFrameData = project.frames![renderedFrame];
   if (!currentFrameData) return null;
 
   const currentHotspots = (project.hotspots || []).filter(h => h.active).map(h => {
-    const pos = h.positions?.find(p => p.frameNumber === currentFrame);
+    const pos = h.positions?.find(p => p.frameNumber === renderedFrame);
     if (pos) { 
       return pos.visible ? { ...h, posX: pos.posX, posY: pos.posY } : null;
     }
-    return h.frameNumber === currentFrame ? h : null;
+    return h.frameNumber === renderedFrame ? h : null;
   }).filter(Boolean) as Vehicle360Hotspot[];
 
   const currentDamages = (project.damageMarkers || []).map(d => {
-    const pos = d.positions?.find(p => p.frameNumber === currentFrame);
+    const pos = d.positions?.find(p => p.frameNumber === renderedFrame);
     if (pos) { 
       return pos.visible ? { ...d, posX: pos.posX, posY: pos.posY } : null;
     }
-    return d.frameNumber === currentFrame ? d : null;
+    return d.frameNumber === renderedFrame ? d : null;
   }).filter(Boolean) as Vehicle360DamageMarker[];
 
   const openPoiModal = (h: Vehicle360Hotspot) => {
@@ -123,6 +152,7 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
       )}
 
       <div className={`relative bg-gray-100 touch-none flex-1 ${!embedded ? 'aspect-video' : 'w-full h-full'}`}>
+        {!frameReady && <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950 text-sm font-semibold text-white">Preparando giro 360°...</div>}
         <ImageCoordinateStage
           imageUrl={currentFrameData.imageUrl}
           markers={markers}

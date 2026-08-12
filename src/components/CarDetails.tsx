@@ -65,15 +65,17 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
     });
   });
 
-  const currentItem = galleryItems.find(item => item.id === selectedMediaId) || galleryItems[0];
+  const resolvingPrimaryMedia = !has360 && loading360 && !userManuallySelected;
+  const currentItem = galleryItems.find(item => item.id === selectedMediaId)
+    || (resolvingPrimaryMedia ? undefined : galleryItems[0]);
 
   // Auto select logic
   useEffect(() => {
-    if (!loading360 && !userManuallySelected) {
+    if (!userManuallySelected) {
       if (has360) {
         setSelectedMediaId('vehicle-360');
         setActive360ViewType(hasExterior ? 'exterior' : 'interior');
-      } else if (car.images.length > 0) {
+      } else if (!loading360 && car.images.length > 0) {
         setSelectedMediaId(car.images[0]);
       }
     }
@@ -238,16 +240,13 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
               className={`bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md aspect-video relative flex items-center justify-center select-none ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
             >
               
-              <AnimatePresence mode="wait">
-                {currentItem?.type === '360' ? (
-                  <motion.div
-                    key={`${currentItem.id}-${active360ViewType}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 z-10"
-                  >
+              {resolvingPrimaryMedia ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950 text-white">
+                  <RotateCcw className="h-8 w-8 animate-spin text-red-500" />
+                  <span className="text-sm font-semibold">Preparando experiência 360°...</span>
+                </div>
+              ) : currentItem?.type === '360' ? (
+                  <div key={`${currentItem.id}-${active360ViewType}`} className="absolute inset-0 z-10">
                     <ClientPoiPanel vehicleId={car.id} viewType={active360ViewType} embedded={true} />
                     {hasExterior && hasInterior && (
                       <div className="absolute top-4 right-4 z-50 flex bg-black/50 p-1 rounded-lg backdrop-blur">
@@ -265,21 +264,18 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                         </button>
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ) : (
-                  <motion.img
+                  <img
                     key={currentItem?.id || 'default'}
                     src={(currentItem as any)?.url || car.images[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'}
                     alt={car.model}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                     referrerPolicy="no-referrer"
+                    decoding="async"
+                    fetchPriority="high"
                   />
                 )}
-              </AnimatePresence>
 
 
               {/* Hover overlay prompt */}
@@ -318,7 +314,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                       selectedMediaId === item.id ? 'border-red-600 shadow-md ring-2 ring-red-600/30' : 'border-slate-200 hover:border-slate-400 opacity-80 hover:opacity-100'
                     }`}
                   >
-                    <img src={item.thumbnail} alt={`Thumb ${idx}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                    <img src={item.thumbnail} alt={`Thumb ${idx}`} loading="lazy" decoding="async" className="w-full h-full object-cover md:group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
                   </button>
                 ))}
               </div>

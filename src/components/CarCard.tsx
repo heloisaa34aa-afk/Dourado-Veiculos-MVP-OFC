@@ -5,7 +5,6 @@
 
 import React from 'react';
 import { Calendar, Gauge, Fuel, CheckCircle2 } from 'lucide-react';
-import { motion } from 'motion/react';
 import { Car } from '../types';
 
 interface CarCardProps {
@@ -21,13 +20,9 @@ export default function CarCard({ car, onSelect }: CarCardProps) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 15 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-50px' }}
-      whileHover={{ y: -6, transition: { duration: 0.2 } }}
+    <article
       onClick={() => onSelect(car)}
-      className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full group cursor-pointer"
+      className="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm md:hover:shadow-xl md:hover:-translate-y-1 transition-[transform,box-shadow] duration-200 flex flex-col h-full group cursor-pointer [content-visibility:auto] [contain-intrinsic-size:0_390px]"
     >
       {/* Image Gallery container with Badges */}
       <div className="relative aspect-video overflow-hidden bg-slate-100">
@@ -36,6 +31,10 @@ export default function CarCard({ car, onSelect }: CarCardProps) {
           alt={`${car.brand} ${car.model}`}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           referrerPolicy="no-referrer"
+          loading="lazy"
+          decoding="async"
+          width={800}
+          height={450}
         />
 
         {/* Badges Overlays */}
@@ -104,6 +103,6 @@ export default function CarCard({ car, onSelect }: CarCardProps) {
           </span>
         </div>
       </div>
-    </motion.div>
+    </article>
   );
 }

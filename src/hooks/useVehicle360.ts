@@ -16,6 +16,9 @@ export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'pub
   
   const startX = useRef(0);
   const startFrame = useRef(0);
+  const draggingRef = useRef(false);
+  const pendingFrameRef = useRef<number | null>(null);
+  const dragAnimationFrame = useRef<number | null>(null);
   const autoSpinInterval = useRef<NodeJS.Timeout | null>(null);
 
   const loadProject = useCallback(async () => {
@@ -93,6 +96,7 @@ export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'pub
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (totalFrames <= 0) return;
     setIsDragging(true);
+    draggingRef.current = true;
     setIsAutoSpinning(false);
     startX.current = e.clientX;
     startFrame.current = currentFrame;
@@ -100,20 +104,31 @@ export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'pub
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isDragging || totalFrames <= 0) return;
+    if (!draggingRef.current || totalFrames <= 0) return;
     const deltaX = e.clientX - startX.current;
     const framesToMove = Math.floor(deltaX / 10); 
     
     let nextIdx = (startFrame.current - framesToMove) % totalFrames;
     if (nextIdx < 0) nextIdx += totalFrames;
     
-    setCurrentFrame(nextIdx);
+    pendingFrameRef.current = nextIdx;
+    if (dragAnimationFrame.current === null) {
+      dragAnimationFrame.current = window.requestAnimationFrame(() => {
+        if (pendingFrameRef.current !== null) setCurrentFrame(pendingFrameRef.current);
+        dragAnimationFrame.current = null;
+      });
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(false);
-    e.currentTarget.releasePointerCapture(e.pointerId);
+    draggingRef.current = false;
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
   };
+
+  useEffect(() => () => {
+    if (dragAnimationFrame.current !== null) window.cancelAnimationFrame(dragAnimationFrame.current);
+  }, []);
 
   useEffect(() => {
     if (isAutoSpinning && totalFrames > 0) {
