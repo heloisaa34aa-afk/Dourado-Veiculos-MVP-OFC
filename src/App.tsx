@@ -23,6 +23,7 @@ const Vehicle360MobileCapture = lazy(() => import('./pages/Vehicle360MobileCaptu
 const CarDetails = lazy(() => import('./components/CarDetails'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const ClientArea = lazy(() => import('./components/ClientArea'));
+const ShowroomHome = lazy(() => import('./pages/ShowroomHome'));
 const demoAdminEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_ADMIN === 'true';
 
 // Supabase services and hooks
@@ -354,6 +355,18 @@ export default function App() {
       <div className="flex-1 flex flex-col">
         <Routes>
           <Route path="/" element={
+            <Suspense fallback={<RouteLoading label="Preparando o showroom..." dark />}>
+              <ShowroomHome
+                cars={cars}
+                carsError={carsError}
+                banners={publicBanners}
+                onSelectCar={handleSelectCarDetails}
+                onSubmitLead={handleSubmitLead}
+              />
+            </Suspense>
+          } />
+
+          <Route path="/modelo-anterior" element={
             <div className="space-y-16">
               {/* Premium Hero promotional showcase section */}
               <section className="relative w-full overflow-hidden bg-slate-950 text-white min-h-[480px] flex items-center justify-center">

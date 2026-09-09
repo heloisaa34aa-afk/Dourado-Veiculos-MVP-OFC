@@ -107,7 +107,7 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openPoiModal(h); }}
-          className="w-8 h-8 rounded-full bg-blue-500/90 text-white flex items-center justify-center shadow-lg hover:bg-blue-600 hover:scale-110 transition-transform cursor-pointer pointer-events-auto"
+          className="pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-xl transition-transform hover:scale-110"
           aria-label={h.title}
         >
           <Info size={16} />
@@ -122,7 +122,7 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openDamageModal(d); }}
-          className="w-8 h-8 rounded-full bg-red-500/90 text-white flex items-center justify-center shadow-lg hover:bg-red-600 hover:scale-110 transition-transform cursor-pointer pointer-events-auto"
+          className="pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-600 text-white shadow-xl transition-transform hover:scale-110"
           aria-label={d.title}
         >
           <AlertTriangle size={16} />
@@ -132,10 +132,10 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
   ];
 
   return (
-    <div className={`bg-white shadow-sm overflow-hidden flex flex-col ${embedded ? 'w-full h-full rounded-2xl' : 'rounded-xl border border-gray-200'}`}>
+    <div className={`overflow-hidden bg-[#07090d] text-white shadow-sm flex flex-col ${embedded ? 'w-full h-full' : 'rounded-[28px] border border-white/10'}`}>
       {!embedded && (
-        <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <h3 className="font-medium text-gray-900">Visão 360° do Veículo</h3>
+        <div className="flex items-center justify-between border-b border-white/10 p-4">
+          <h3 className="font-bold text-white">Visão 360° do veículo</h3>
           
           <div className="flex gap-2">
             <button onClick={prevFrame} className="p-2 rounded-full hover:bg-gray-100 text-gray-600" aria-label="Frame anterior">
@@ -151,12 +151,12 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         </div>
       )}
 
-      <div className={`relative bg-gray-100 touch-none flex-1 ${!embedded ? 'aspect-video' : 'w-full h-full'}`}>
+      <div className={`relative flex-1 touch-none bg-[#07090d] ${!embedded ? 'aspect-[4/3] sm:aspect-video' : 'h-full w-full'}`}>
         {!frameReady && <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950 text-sm font-semibold text-white">Preparando giro 360°...</div>}
         <ImageCoordinateStage
           imageUrl={currentFrameData.imageUrl}
           markers={markers}
-          className={`cursor-ew-resize w-full h-full object-contain ${embedded ? 'absolute inset-0' : ''}`}
+          className={`w-full h-full cursor-ew-resize object-contain ${embedded ? 'absolute inset-0' : ''}`}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -164,15 +164,19 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
           onPointerLeave={handlePointerUp}
         />
         
+        <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-white/10 bg-black/55 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-wider text-white backdrop-blur-md">
+          {viewType === 'exterior' ? 'Exterior' : 'Interior'} · {renderedFrame + 1}/{totalFrames}
+        </div>
+
         {embedded && (
-           <button onClick={toggleAutoSpin} className="absolute bottom-4 right-4 z-10 p-3 bg-black/60 hover:bg-black/80 backdrop-blur text-white rounded-xl shadow-lg transition-all" aria-label={isAutoSpinning ? "Pausar giro" : "Giro automático"}>
+           <button onClick={toggleAutoSpin} className="absolute bottom-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/60 text-white shadow-lg backdrop-blur transition hover:bg-black/80 sm:bottom-5 sm:right-5" aria-label={isAutoSpinning ? "Pausar giro" : "Giro automático"}>
              {isAutoSpinning ? <Pause size={24} /> : <Play size={24} />}
            </button>
         )}
 
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
-          <div className="bg-black/50 backdrop-blur text-white px-4 py-2 rounded-full text-sm font-medium flex gap-2 shadow-sm">
-            <span>Arraste para girar em 360°</span>
+        <div className="pointer-events-none absolute bottom-3 left-3 right-16 flex sm:bottom-5 sm:left-5">
+          <div className="rounded-full border border-white/10 bg-black/55 px-3 py-2 text-xs font-bold text-white shadow-sm backdrop-blur">
+            <span>{isDragging ? 'Girando…' : 'Arraste para explorar'}</span>
           </div>
         </div>
       </div>

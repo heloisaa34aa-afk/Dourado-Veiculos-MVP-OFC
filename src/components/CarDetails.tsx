@@ -201,28 +201,28 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-16">
+    <div className="min-h-screen bg-[#f3f4f6] pb-16">
       
       {/* Top Banner & Breadcrumb */}
-      <div className="bg-white border-b border-gray-100 py-4">
+      <div className="border-b border-white/10 bg-[#080a0e] py-4 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-slate-600 hover:text-red-600 font-semibold transition-colors text-sm cursor-pointer"
+            className="flex cursor-pointer items-center gap-2 text-sm font-bold text-slate-300 transition-colors hover:text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Voltar ao Estoque</span>
           </button>
-          <div className="text-xs text-slate-400">
-            Estoque &gt; {car.brand} &gt; <span className="text-slate-600 font-medium">{car.model}</span>
+          <div className="hidden text-xs text-slate-500 sm:block">
+            Estoque &gt; {car.brand} &gt; <span className="font-medium text-slate-300">{car.model}</span>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-10">
+      <div className="mx-auto max-w-[1440px] space-y-10 px-3 pt-4 sm:px-8 sm:pt-8 lg:px-12">
         
         {/* Core Detail Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
           
           {/* Left Side: Images and Gallery */}
           <div className="lg:col-span-8 space-y-4">
@@ -237,7 +237,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                   setGalleryPan({ x: 0, y: 0 });
                 }
               }}
-              className={`bg-slate-900 rounded-3xl overflow-hidden border border-slate-200/80 shadow-md aspect-video relative flex items-center justify-center select-none ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
+              className={`relative flex aspect-[4/3] select-none items-center justify-center overflow-hidden rounded-[26px] border border-black/10 bg-[#07090d] shadow-[0_28px_70px_rgba(15,23,42,.2)] sm:aspect-video lg:rounded-[34px] ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
             >
               
               {resolvingPrimaryMedia ? (
@@ -249,16 +249,16 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                   <div key={`${currentItem.id}-${active360ViewType}`} className="absolute inset-0 z-10">
                     <ClientPoiPanel vehicleId={car.id} viewType={active360ViewType} embedded={true} />
                     {hasExterior && hasInterior && (
-                      <div className="absolute top-4 right-4 z-50 flex bg-black/50 p-1 rounded-lg backdrop-blur">
+                      <div className="absolute right-3 top-3 z-50 flex rounded-full border border-white/10 bg-black/60 p-1 backdrop-blur sm:right-5 sm:top-5">
                         <button
                           onClick={(e) => { e.stopPropagation(); setActive360ViewType('exterior'); }}
-                          className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${active360ViewType === 'exterior' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+                          className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${active360ViewType === 'exterior' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
                         >
                           Externo
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); setActive360ViewType('interior'); }}
-                          className={`px-3 py-1 text-xs font-bold rounded-md transition-colors ${active360ViewType === 'interior' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+                          className={`rounded-full px-3 py-2 text-xs font-bold transition-colors ${active360ViewType === 'interior' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
                         >
                           Interno
                         </button>
@@ -323,57 +323,57 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
 
           {/* Right Side: Primary purchase and actions card */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+            <div className="space-y-6 rounded-[28px] bg-[#090b10] p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,.18)] lg:sticky lg:top-28 lg:p-7">
               
               {/* Titles */}
               <div>
                 <span className="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">
                   {car.category}
                 </span>
-                <h1 className="font-extrabold text-3xl text-slate-900 tracking-tight mt-2.5">
+                <h1 className="mt-3 text-4xl font-black tracking-[-.045em] text-white">
                   {car.brand} {car.model}
                 </h1>
-                <p className="text-slate-500 font-medium text-sm mt-1">{car.version}</p>
+                <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>
               </div>
 
               {/* Price display replaced with quote request callout */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                   Disponível para Orçamento
                 </span>
-                <span className="text-2xl font-black text-slate-900 tracking-tight block">
+                <span className="block text-2xl font-black tracking-tight text-white">
                   Preço sob Consulta
                 </span>
-                <p className="text-[11px] text-slate-500 mt-2 font-medium">
+                <p className="mt-2 text-xs font-medium leading-5 text-slate-400">
                   Entrada facilitada e financiamento sob medida. Solicite sua cotação personalizada hoje mesmo.
                 </p>
               </div>
 
               {/* Quick Specs parameters */}
-              <div className="grid grid-cols-2 gap-4 text-sm font-medium text-slate-700">
-                <div className="flex items-center gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <div className="grid grid-cols-2 gap-3 text-sm font-medium text-slate-200">
+                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Calendar className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Ano</span>
                     <span>{car.year}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Gauge className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Quilometragem</span>
                     <span>{car.km === 0 ? 'Zero km' : car.km.toLocaleString('pt-BR') + ' km'}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Settings className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Câmbio</span>
                     <span>{car.gearbox}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Fuel className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Combustível</span>

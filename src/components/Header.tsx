@@ -1,137 +1,44 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { CarFront, LogOut, Menu, ShieldCheck, UserRound, X } from 'lucide-react';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { UserProfile } from '../types';
 
-import React, { useMemo } from 'react';
-import { Car, LayoutDashboard, ShieldCheck, UserCheck, LogOut } from 'lucide-react';
-import { motion } from 'motion/react';
-import { UserProfile } from '../types';
-import { useNavigate, useLocation } from 'react-router-dom';
-
-interface HeaderProps {
-  userProfile: UserProfile | null;
-  onLogout: () => void;
-}
+interface HeaderProps { userProfile: UserProfile | null; onLogout: () => void }
 
 export default function Header({ userProfile, onLogout }: HeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const isAdmin = location.pathname.startsWith('/admin');
 
-  const currentView = useMemo(() => {
-    if (location.pathname.startsWith('/admin')) return 'admin';
-    if (location.pathname.startsWith('/cliente')) return 'client';
-    return 'catalog';
-  }, [location.pathname]);
+  const goHomeSection = (id?: string) => {
+    setMenuOpen(false);
+    navigate('/');
+    if (id) window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 80);
+  };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white border-b border-gray-100 shadow-sm backdrop-blur-md bg-opacity-95">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        
-        {/* Brand Logo */}
-        <div 
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate('/')}
-        >
-          <div className="bg-red-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
-            <Car className="w-6 h-6" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-slate-900 leading-tight">
-              Dourado <span className="text-red-600">Veículos</span>
-            </span>
-            <span className="text-[10px] font-semibold text-slate-400 tracking-wider uppercase -mt-0.5">
-              Seminovos & Premium
-            </span>
-          </div>
-        </div>
+    <header className="sticky top-0 z-[70] border-b border-white/10 bg-[#080a0e]/95 text-white backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-8 lg:h-20 lg:px-12">
+        <button onClick={() => goHomeSection()} className="flex items-center gap-3 text-left" aria-label="Ir para o início">
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-red-600 shadow-[0_8px_30px_rgba(220,38,38,.3)]"><CarFront className="h-5 w-5" /></span>
+          <span><strong className="block text-lg font-black leading-none tracking-[-.035em]">Dourado<span className="text-red-500">.</span></strong><small className="mt-1 block text-[10px] font-bold uppercase tracking-[.2em] text-slate-500">Veículos</small></span>
+        </button>
 
-        {/* Navigation Links (Public view only, or neutral links) */}
-        <nav className="hidden md:flex items-center gap-8">
-          <button
-            onClick={() => navigate('/')}
-            className={`font-medium text-sm transition-all pb-1 border-b-2 cursor-pointer ${
-              currentView === 'catalog'
-                ? 'text-red-600 border-red-600'
-                : 'text-slate-500 border-transparent hover:text-slate-900'
-            }`}
-          >
-            Estoque
-          </button>
-          <a
-            href="#financiamento"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/');
-              setTimeout(() => {
-                document.getElementById('finance-section')?.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
-            }}
-            className="text-slate-500 hover:text-slate-900 font-medium text-sm transition-colors"
-          >
-            Financiamento
-          </a>
-          <a
-            href="#vantagens"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate('/');
-              setTimeout(() => {
-                document.getElementById('advantages-section')?.scrollIntoView({ behavior: 'smooth' });
-              }, 100);
-            }}
-            className="text-slate-500 hover:text-slate-900 font-medium text-sm transition-colors"
-          >
-            Vantagens
-          </a>
+        <nav className="hidden items-center gap-8 lg:flex" aria-label="Navegação principal">
+          <button onClick={() => goHomeSection('estoque')} className="text-sm font-bold text-slate-300 transition hover:text-white">Estoque</button>
+          <button onClick={() => goHomeSection('advantages-section')} className="text-sm font-bold text-slate-300 transition hover:text-white">Por que a Dourado</button>
+          <button onClick={() => goHomeSection('finance-section')} className="text-sm font-bold text-slate-300 transition hover:text-white">Financiamento</button>
         </nav>
 
-        {/* View Toggle / Call to Action */}
-        <div className="flex items-center gap-3">
-          {userProfile && userProfile.role === 'admin' && (
-            <button
-              onClick={() => navigate('/admin')}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border transition-all cursor-pointer ${
-                currentView === 'admin'
-                  ? 'bg-red-600 text-white border-red-600 shadow-md'
-                  : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50'
-              }`}
-            >
-              <ShieldCheck className="w-4 h-4 text-red-500" />
-              <span>Painel ADM</span>
-            </button>
-          )}
-
-          {userProfile ? (
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => navigate('/cliente')}
-                className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 font-extrabold text-sm hover:bg-slate-200 cursor-pointer"
-                title={`Logado como: ${userProfile.name || userProfile.email}`}
-              >
-                {(userProfile.name || 'U').charAt(0).toUpperCase()}
-              </button>
-              <button
-                onClick={onLogout}
-                className="p-2 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                title="Sair da Conta"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            </div>
-          ) : (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/cliente')}
-              className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold rounded-xl shadow-md transition-all cursor-pointer"
-            >
-              <UserCheck className="w-4 h-4 text-red-500" />
-              <span>Área do Cliente</span>
-            </motion.button>
-          )}
+        <div className="flex items-center gap-2">
+          {userProfile?.role === 'admin' && <button onClick={() => navigate('/admin')} className={`hidden min-h-11 items-center gap-2 rounded-full px-4 text-sm font-bold sm:flex ${isAdmin ? 'bg-red-600' : 'border border-white/15 bg-white/5'}`}><ShieldCheck className="h-4 w-4" /> Painel ADM</button>}
+          {userProfile ? <><button onClick={() => navigate('/cliente')} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5" aria-label="Área do cliente"><UserRound className="h-5 w-5" /></button><button onClick={onLogout} className="hidden h-11 w-11 place-items-center rounded-full text-slate-400 hover:bg-white/5 hover:text-red-400 sm:grid" aria-label="Sair"><LogOut className="h-5 w-5" /></button></> : <button onClick={() => navigate('/cliente')} className="hidden min-h-11 rounded-full bg-white px-5 text-sm font-black text-slate-950 transition hover:bg-slate-200 sm:block">Entrar</button>}
+          <button onClick={() => setMenuOpen(value => !value)} className="grid h-11 w-11 place-items-center rounded-full border border-white/15 lg:hidden" aria-label={menuOpen ? 'Fechar menu' : 'Abrir menu'}>{menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}</button>
         </div>
       </div>
+
+      {menuOpen && <div className="border-t border-white/10 bg-[#080a0e] px-4 py-4 lg:hidden"><nav className="grid gap-1"><button onClick={() => goHomeSection('estoque')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Estoque</button><button onClick={() => goHomeSection('advantages-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Por que a Dourado</button><button onClick={() => goHomeSection('finance-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Financiamento</button>{!userProfile && <button onClick={() => navigate('/cliente')} className="mt-2 rounded-xl bg-red-600 px-4 py-3 text-left font-black">Entrar na área do cliente</button>}</nav></div>}
     </header>
   );
 }
