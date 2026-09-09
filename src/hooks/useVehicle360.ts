@@ -3,6 +3,7 @@ import { vehicle360Service } from '../services/vehicle360.service';
 import { vehicle360Storage } from '../services/vehicle360.storage';
 import { validation360 } from '../utils/validation360';
 import { Vehicle360Project, Vehicle360Frame, Vehicle360Hotspot, Vehicle360DamageMarker } from '../types';
+import { optimizeVehicle360Frame } from '../utils/imageOptimization';
 
 export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'public', viewType: 'exterior' | 'interior' = 'exterior') {
   const [project, setProject] = useState<Vehicle360Project | null>(null);
@@ -151,42 +152,37 @@ export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'pub
       setUploading(true);
       setUploadProgress({ current: 0, total: files.length });
 
-      let startIndex = 0;
+      const startIndex = mode === 'append' && project.frames?.length
+        ? Math.max(...project.frames.map(frame => frame.frameNumber)) + 1
+        : 0;
+      const oldStoragePaths = mode === 'replace'
+        ? (project.frames || []).map(frame => frame.storagePath).filter(Boolean) as string[]
+        : [];
 
-      if (mode === 'replace') {
-        if (project.frames && project.frames.length > 0) {
-          for (const frame of project.frames) {
-            if (frame.storagePath) {
-              await vehicle360Storage.deleteStorageObject(frame.storagePath);
-            }
-          }
-          
-        }
-      } else {
-        if (project.frames && project.frames.length > 0) {
-          startIndex = Math.max(...project.frames.map(f => f.frameNumber)) + 1;
-        }
-      }
-
+      let cursor = 0;
       let successCount = 0;
-      const newFrames: any[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const frameNumber = startIndex + i;
-        const { imageUrl, storagePath } = await vehicle360Storage.uploadFrame(vehicleId, project.id, file, `${Date.now()}_frame_${frameNumber}.jpg`);
-        
-        newFrames.push({
-          frameNumber,
-          imageUrl,
-          storagePath
-        });
-        
-        successCount++;
-        setUploadProgress({ current: successCount, total: files.length });
-      }
+      const newFrames = new Array<{ frameNumber: number; imageUrl: string; storagePath: string }>(files.length);
+      const uploadWorker = async () => {
+        while (cursor < files.length) {
+          const index = cursor++;
+          const frameNumber = startIndex + index;
+          const optimizedFile = await optimizeVehicle360Frame(files[index]);
+          const { imageUrl, storagePath } = await vehicle360Storage.uploadFrame(
+            vehicleId,
+            project.id,
+            optimizedFile,
+            `${Date.now()}_${crypto.randomUUID()}_frame_${frameNumber}.webp`,
+          );
+          newFrames[index] = { frameNumber, imageUrl, storagePath };
+          successCount += 1;
+          setUploadProgress({ current: successCount, total: files.length });
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(3, files.length) }, uploadWorker));
       
       if (mode === 'replace') {
         await vehicle360Service.replaceProjectFrames(project.id, newFrames);
+        if (oldStoragePaths.length) await vehicle360Storage.deleteStorageObjects(oldStoragePaths);
       } else {
         await vehicle360Service.addFrames(project.id, newFrames);
       }

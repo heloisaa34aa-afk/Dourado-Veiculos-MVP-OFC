@@ -51,7 +51,7 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
       setFrameReady(true);
       return;
     }
-    void preloadImage(url).then(() => {
+    void preloadImage(url, 'high').then(() => {
       if (requestedFrameRef.current === currentFrame) {
         setRenderedFrame(currentFrame);
         setFrameReady(true);

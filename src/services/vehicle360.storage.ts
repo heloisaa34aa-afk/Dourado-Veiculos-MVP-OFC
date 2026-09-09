@@ -6,7 +6,7 @@ export const vehicle360Storage = {
   async uploadFrame(vehicleId: string, projectId: string, file: File, filename: string): Promise<{ imageUrl: string, storagePath: string }> {
     const storagePath = `360/${vehicleId}/${projectId}/frames/${filename}`;
     const { data, error } = await supabase.storage.from(BUCKET_NAME).upload(storagePath, file, {
-      cacheControl: '3600',
+      cacheControl: '31536000',
       upsert: true
     });
     

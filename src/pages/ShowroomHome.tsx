@@ -1,6 +1,6 @@
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight, BadgeCheck, Banknote, CarFront, ChevronRight, Gauge,
+  ArrowLeft, ArrowRight, BadgeCheck, Banknote, CarFront, ChevronRight,
   Headphones, Search, ShieldCheck, SlidersHorizontal, Sparkles, X,
 } from 'lucide-react';
 import type { Car, LeadMessage } from '../types';
@@ -24,9 +24,14 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [sent, setSent] = useState(false);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
 
   const available = useMemo(() => cars.filter(car => !car.isSold), [cars]);
-  const featured = available.find(car => car.isFeatured) ?? available[0];
+  const featuredCars = useMemo(() => {
+    const selected = available.filter(car => car.isFeatured);
+    return (selected.length ? selected : available).slice(0, 6);
+  }, [available]);
+  const featured = featuredCars[featuredIndex % Math.max(featuredCars.length, 1)];
   const brands = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.brand))).sort()], [available]);
   const categories = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.category))).sort()], [available]);
   const filtered = useMemo(() => {
@@ -38,6 +43,14 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
         && (category === 'Todos' || car.category === category);
     });
   }, [available, brand, category, search]);
+
+  useEffect(() => {
+    if (featuredCars.length < 2) return;
+    const timer = window.setInterval(() => setFeaturedIndex(index => (index + 1) % featuredCars.length), 6500);
+    return () => window.clearInterval(timer);
+  }, [featuredCars.length]);
+
+  useEffect(() => { setFeaturedIndex(index => Math.min(index, Math.max(featuredCars.length - 1, 0))); }, [featuredCars.length]);
 
   const submitFinance = async (event: FormEvent) => {
     event.preventDefault();
@@ -63,11 +76,12 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
       <section className="relative isolate min-h-[660px] overflow-hidden bg-[#07090d] text-white lg:min-h-[720px]">
         {featured?.images[0] && (
           <img
+            key={featured.id}
             src={featured.images[0]}
             alt=""
             aria-hidden="true"
             fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-55"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-55 transition-opacity duration-700"
           />
         )}
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,10,.98)_0%,rgba(4,6,10,.86)_43%,rgba(4,6,10,.2)_78%),linear-gradient(0deg,rgba(4,6,10,.9)_0%,transparent_55%)]" />
@@ -84,6 +98,7 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
               Explore cada detalhe, gire o veículo em 360° e fale com quem entende antes de decidir.
             </p>
+            {featured && <div className="mt-7 flex items-center gap-3"><span className="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-red-400">Em destaque</span><span className="text-sm font-bold text-white">{featured.brand} {featured.model} · {featured.year}</span></div>}
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#estoque" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-red-600 px-6 text-sm font-extrabold text-white transition hover:bg-red-500">
                 Explorar estoque <ArrowRight className="h-4 w-4" />
@@ -101,6 +116,8 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
             <div><strong className="block text-xl font-black">100+</strong><span className="text-xs text-slate-400">itens avaliados</span></div>
             <div><strong className="block text-xl font-black">1:1</strong><span className="text-xs text-slate-400">atendimento</span></div>
           </div>
+
+          {featuredCars.length > 1 && <div className="mt-8 flex items-center gap-3" aria-label="Veículos em destaque"><button onClick={() => setFeaturedIndex(index => (index - 1 + featuredCars.length) % featuredCars.length)} className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur hover:bg-white/10" aria-label="Destaque anterior"><ArrowLeft className="h-4 w-4" /></button><div className="flex gap-2">{featuredCars.map((car, index) => <button key={car.id} onClick={() => setFeaturedIndex(index)} aria-label={`Ver ${car.brand} ${car.model}`} className={`h-2 rounded-full transition-all ${index === featuredIndex ? 'w-10 bg-red-500' : 'w-2 bg-white/35 hover:bg-white/70'}`} />)}</div><button onClick={() => setFeaturedIndex(index => (index + 1) % featuredCars.length)} className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur hover:bg-white/10" aria-label="Próximo destaque"><ArrowRight className="h-4 w-4" /></button></div>}
         </div>
       </section>
 

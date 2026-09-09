@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ArrowRight, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ArrowRight, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import type { BannerPlacement, SiteBanner } from '../services/banner.service';
 
 interface PublicPromotionProps {
@@ -13,7 +13,7 @@ function BannerPicture({ banner, className }: { banner: SiteBanner; className: s
   return (
     <picture>
       {banner.mobile_image_url && <source media="(max-width: 640px)" srcSet={banner.mobile_image_url} />}
-      <img src={desktop} alt={banner.title || banner.name} className={className} />
+      <img src={desktop} alt={banner.title || banner.name} className={className} loading={banner.placement === 'popup' ? 'eager' : 'lazy'} decoding="async" />
     </picture>
   );
 }
@@ -35,8 +35,18 @@ function PromotionContent({ banner, compact = false }: { banner: SiteBanner; com
 }
 
 export function PublicPromotion({ banners, placement }: PublicPromotionProps) {
-  const banner = banners.find(item => item.placement === placement);
+  const available = useMemo(() => banners.filter(item => item.placement === placement), [banners, placement]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const banner = available[activeIndex % Math.max(available.length, 1)];
   const [dismissed, setDismissed] = useState(false);
+
+  useEffect(() => { setActiveIndex(0); }, [available.length, placement]);
+
+  useEffect(() => {
+    if (placement !== 'home_inline' || available.length < 2) return;
+    const timer = window.setInterval(() => setActiveIndex(index => (index + 1) % available.length), 7000);
+    return () => window.clearInterval(timer);
+  }, [available.length, placement]);
 
   useEffect(() => {
     setDismissed(Boolean(banner?.show_once_per_session && sessionStorage.getItem(`banner:${banner.id}`)));
@@ -61,11 +71,12 @@ export function PublicPromotion({ banners, placement }: PublicPromotionProps) {
 
   if (placement === 'home_inline') {
     return (
-      <aside style={{ backgroundColor: banner.background_color, color: banner.text_color }} className="relative mx-auto min-h-52 max-w-7xl overflow-hidden rounded-3xl shadow-xl sm:min-h-64">
+      <aside style={{ backgroundColor: banner.background_color, color: banner.text_color }} className="relative mx-auto aspect-[5/4] max-w-[1380px] overflow-hidden rounded-[30px] shadow-[0_26px_70px_rgba(15,23,42,.18)] sm:aspect-[16/5] sm:rounded-[36px]">
         <BannerPicture banner={banner} className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent sm:bg-gradient-to-r sm:from-black/80 sm:via-black/35 sm:to-transparent" />
         <PromotionContent banner={banner} />
         {banner.is_dismissible && <button onClick={dismiss} aria-label="Fechar promoção" className="absolute right-3 top-3 z-20 rounded-full bg-black/45 p-2 text-white backdrop-blur hover:bg-black/65"><X className="h-5 w-5" /></button>}
+        {available.length > 1 && <><button onClick={() => setActiveIndex(index => (index - 1 + available.length) % available.length)} aria-label="Banner anterior" className="absolute bottom-4 left-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur hover:bg-black/65"><ChevronLeft className="h-5 w-5" /></button><div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-1.5">{available.map((item, index) => <button key={item.id} onClick={() => setActiveIndex(index)} aria-label={`Exibir promoção ${index + 1}`} className={`h-2 rounded-full ${index === activeIndex ? 'w-7 bg-white' : 'w-2 bg-white/45'}`} />)}</div><button onClick={() => setActiveIndex(index => (index + 1) % available.length)} aria-label="Próximo banner" className="absolute bottom-4 right-4 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/15 bg-black/45 text-white backdrop-blur hover:bg-black/65"><ChevronRight className="h-5 w-5" /></button></>}
       </aside>
     );
   }

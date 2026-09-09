@@ -2,6 +2,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, Edit2, Eye, Image as ImageIcon, Loader2, Plus, Save, Trash2, Upload, X } from 'lucide-react';
 import { bannerService, BannerInput, BannerPlacement, SiteBanner } from '../services/banner.service';
 import { BANNER_FORMAT_SPECS, BannerImageSize, bannerSizeLabel } from '../utils/bannerFormats';
+import { optimizeBannerImage } from '../utils/imageOptimization';
 
 const emptyBanner: BannerInput = {
   name: '', placement: 'home_inline', title: '', subtitle: '',
@@ -69,7 +70,8 @@ export function BannerManager() {
     try {
       setUploading(variant);
       setError(null);
-      const result = await bannerService.uploadImage(file, variant);
+      const optimized = await optimizeBannerImage(file, selectedFormat[variant]);
+      const result = await bannerService.uploadImage(optimized, variant);
       setForm(current => variant === 'desktop'
         ? { ...current, desktop_image_url: result.url, desktop_storage_path: result.path }
         : { ...current, mobile_image_url: result.url, mobile_storage_path: result.path });

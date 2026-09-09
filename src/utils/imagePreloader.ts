@@ -5,7 +5,7 @@ export function isImageDecoded(url: string) {
   return decodedImages.has(url);
 }
 
-export function preloadImage(url: string): Promise<void> {
+export function preloadImage(url: string, priority: 'high' | 'low' | 'auto' = 'auto'): Promise<void> {
   if (!url || decodedImages.has(url)) return Promise.resolve();
   const pending = pendingImages.get(url);
   if (pending) return pending;
@@ -13,6 +13,7 @@ export function preloadImage(url: string): Promise<void> {
   const request = new Promise<void>((resolve, reject) => {
     const image = new Image();
     image.decoding = 'async';
+    image.fetchPriority = priority;
     image.onload = async () => {
       try { await image.decode?.(); } catch { /* onload is enough for older browsers */ }
       decodedImages.add(url);
@@ -32,22 +33,22 @@ export function preloadImage(url: string): Promise<void> {
 
 export async function preloadFrameSequence(urls: string[], firstIndex = 0) {
   if (!urls.length) return;
-  const order = [
-    firstIndex,
-    (firstIndex + 1) % urls.length,
-    (firstIndex - 1 + urls.length) % urls.length,
-    ...urls.map((_, index) => index),
-  ].filter((index, position, list) => list.indexOf(index) === position);
+  const order: number[] = [firstIndex];
+  for (let distance = 1; distance < urls.length; distance += 1) {
+    order.push((firstIndex + distance) % urls.length, (firstIndex - distance + urls.length) % urls.length);
+  }
+  const uniqueOrder = order.filter((index, position, list) => list.indexOf(index) === position);
 
-  await Promise.all(order.slice(0, 3).map(index => preloadImage(urls[index]).catch(() => undefined)));
+  await Promise.all(uniqueOrder.slice(0, 5).map(index => preloadImage(urls[index], 'high').catch(() => undefined)));
 
   const loadRemaining = () => {
-    let cursor = 3;
+    let cursor = 5;
     const next = () => {
-      if (cursor >= order.length) return;
-      void preloadImage(urls[order[cursor++]])
-        .catch(() => undefined)
-        .finally(() => window.setTimeout(next, 0));
+      if (cursor >= uniqueOrder.length) return;
+      const batch = uniqueOrder.slice(cursor, cursor + 3);
+      cursor += batch.length;
+      void Promise.all(batch.map(index => preloadImage(urls[index], 'low').catch(() => undefined)))
+        .finally(() => window.setTimeout(next, 16));
     };
     next();
   };
