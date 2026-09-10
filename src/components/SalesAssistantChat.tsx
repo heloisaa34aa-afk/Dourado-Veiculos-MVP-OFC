@@ -9,7 +9,7 @@ interface ChatMessage { role: 'user' | 'assistant'; content: string }
 export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([{
-    role: 'assistant', content: 'Olá! Sou a assistente da Dourado Veículos. Posso ajudar a encontrar um carro, explicar financiamento ou chamar um vendedor. Como posso ajudar?',
+    role: 'assistant', content: 'Olá! Eu posso comparar os carros disponíveis e ajudar você a escolher pelo uso, orçamento e preferências. Que tipo de carro você procura?',
   }]);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -66,7 +66,7 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
           {vehicleTitle && <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs font-semibold text-red-800">Conversando sobre: {vehicleTitle}</div>}
           <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overscroll-contain bg-slate-50 p-4">
             {messages.map((message, index) => <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[86%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.role === 'user' ? 'rounded-br-sm bg-red-600 text-white' : 'rounded-bl-sm border border-slate-200 bg-white text-slate-700 shadow-sm'}`}>{message.content}</div></div>)}
-            {busy && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Consultando estoque...</div>}
+            {busy && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Analisando as melhores opções...</div>}
           </div>
 
           <div className="flex gap-2 overflow-x-auto border-t border-slate-200 bg-white px-3 py-2 text-xs">
