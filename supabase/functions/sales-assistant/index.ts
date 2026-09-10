@@ -121,11 +121,27 @@ Deno.serve(async req => {
     const { error: userMessageError } = await admin.from('sales_chat_messages').insert({ session_id: session.id, role: 'user', content: message });
     if (userMessageError) throw userMessageError;
 
-    const [{ data: history }, { data: vehicles }, { data: settings }] = await Promise.all([
+    const [historyResult, vehiclesResult, settingsResult] = await Promise.all([
       admin.from('sales_chat_messages').select('role,content').eq('session_id', session.id).order('created_at', { ascending: false }).limit(14),
-      admin.from('vehicles').select('id,brand,model,version,year,mileage,transmission,fuel,color,price,status,sold').eq('sold', false).limit(24),
+      admin.from('vehicles').select('id,brand,model,version,year,mileage,transmission,fuel,color,price,status,sold')
+        .or('sold.is.null,sold.eq.false')
+        .or('status.is.null,status.neq.Vendido')
+        .order('featured', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(30),
       admin.from('settings').select('company_name,whatsapp,phone,hours,address').limit(1).maybeSingle(),
     ]);
+
+    if (vehiclesResult.error) {
+      console.error('[sales-assistant] stock lookup failed:', vehiclesResult.error);
+      throw new Error('Não foi possível consultar o estoque.');
+    }
+    if (historyResult.error) console.error('[sales-assistant] history lookup failed:', historyResult.error);
+    if (settingsResult.error) console.error('[sales-assistant] settings lookup failed:', settingsResult.error);
+
+    const history = historyResult.data || [];
+    const vehicles = vehiclesResult.data || [];
+    const settings = settingsResult.data;
 
     const stock = (vehicles || []) as StockVehicle[];
     const apiKey = Deno.env.get('GEMINI_API_KEY');
@@ -142,6 +158,7 @@ Atue como uma consultora de vendas atenciosa e conhecedora de carros, não como 
 Quando o cliente pedir recomendação, cite de 1 a 3 veículos REAIS do estoque e explique brevemente por que combinam com o uso informado. Se ele estiver na página de um veículo, priorize esse carro. Use SOMENTE os dados fornecidos. Não invente disponibilidade, preço, parcela, taxa, garantia, avaliação ou condição comercial.
 Não mencione WhatsApp, atendimento humano ou vendedor em todas as respostas. Ofereça encaminhamento somente quando o cliente pedir contato, quiser agendar, estiver pronto para negociar ou quando uma informação comercial precisar de confirmação. Nunca peça CPF, cartão ou dados sensíveis.
 Estoque: ${JSON.stringify(stock)}
+Quantidade confirmada no estoque: ${stock.length} veículo(s). Se essa quantidade for maior que zero, nunca diga que o estoque está vazio.
 Loja: ${JSON.stringify(settings || {})}
 Veículo da página: ${JSON.stringify({ id: body.vehicleId || session.vehicle_id, title: body.vehicleTitle || session.vehicle_title })}
 Retorne APENAS JSON válido neste formato: {"reply":"resposta ao cliente","pain_points":["..."],"desired_benefits":["..."],"objections":["..."],"summary":"resumo comercial acumulado para o vendedor","lead_score":0,"status":"open"}. status pode ser open, qualified ou handoff.`;
@@ -180,7 +197,7 @@ Retorne APENAS JSON válido neste formato: {"reply":"resposta ao cliente","pain_
     if (assistantMessageResult.error) throw assistantMessageResult.error;
     if (sessionUpdateResult.error) throw sessionUpdateResult.error;
 
-    return json({ reply: result.reply, whatsapp: settings?.whatsapp || settings?.phone || '', leadScore: result.lead_score });
+    return json({ reply: result.reply, whatsapp: settings?.whatsapp || settings?.phone || '', leadScore: result.lead_score, stockCount: stock.length });
   } catch (error) {
     console.error('[sales-assistant]', error);
     return json({ error: 'Não foi possível responder agora. Tente novamente ou fale pelo WhatsApp.' }, 500);

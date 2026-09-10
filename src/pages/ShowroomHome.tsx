@@ -127,57 +127,55 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
 
   return (
     <main className="overflow-hidden bg-[#f3f4f6] text-slate-950">
-      <section className="relative isolate min-h-[660px] overflow-hidden bg-[#07090d] text-white lg:min-h-[720px]">
-        {featured?.images[0] && (
-          <img
-            key={featured.id}
-            src={featured.images[0]}
-            alt=""
-            aria-hidden="true"
-            fetchPriority="high"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-55 transition-opacity duration-700"
-          />
-        )}
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(4,6,10,.98)_0%,rgba(4,6,10,.86)_43%,rgba(4,6,10,.2)_78%),linear-gradient(0deg,rgba(4,6,10,.9)_0%,transparent_55%)]" />
-        <div className="absolute -right-24 top-16 h-72 w-72 rounded-full bg-red-600/25 blur-[110px]" />
+      <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f7f7f8_55%,#eceff3_100%)]">
+        <div className="pointer-events-none absolute -left-24 top-20 h-64 w-64 rounded-full bg-red-600/10 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-slate-900/10 blur-3xl" />
 
-        <div className="relative mx-auto flex min-h-[660px] max-w-[1440px] flex-col justify-end px-5 pb-32 pt-24 sm:px-8 lg:min-h-[720px] lg:justify-center lg:px-12 lg:pb-28">
-          <div className="max-w-3xl lg:max-w-[46%]">
-            <div className="mb-5 flex items-center gap-3 text-xs font-extrabold uppercase tracking-[.22em] text-red-400">
-              <span className="h-px w-10 bg-red-500" /> Curadoria Dourado
+        <div className="relative mx-auto grid max-w-[1440px] gap-10 px-5 pb-24 pt-16 sm:px-8 sm:pt-20 lg:min-h-[680px] lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:gap-16 lg:px-12 lg:pb-28">
+          <div>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[.16em] text-red-700">
+              <BadgeCheck className="h-4 w-4" /> Escolha com confiança
             </div>
-            <h1 className="max-w-2xl text-[clamp(2.9rem,7vw,6.8rem)] font-black leading-[.88] tracking-[-.065em]">
-              Seu próximo carro, <span className="text-red-500">sem dúvidas.</span>
+            <h1 className="max-w-xl text-[clamp(2.7rem,5.4vw,5.3rem)] font-black leading-[.95] tracking-[-.06em] text-slate-950">
+              O carro certo para o seu <span className="text-red-600">momento.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
-              Explore cada detalhe, gire o veículo em 360° e fale com quem entende antes de decidir.
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+              Compare opções selecionadas, veja cada detalhe em 360° e encontre uma condição que faça sentido para você.
             </p>
-            {featured && <div className="mt-7 flex items-center gap-3"><span className="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-red-400">Em destaque</span><span className="text-sm font-bold text-white">{featured.brand} {featured.model} · {featured.year}</span></div>}
+
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#estoque" className="inline-flex min-h-12 items-center gap-2 rounded-full bg-red-600 px-6 text-sm font-extrabold text-white transition hover:bg-red-500">
-                Explorar estoque <ArrowRight className="h-4 w-4" />
+              <a href="#estoque" className="inline-flex min-h-13 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-extrabold text-white transition hover:bg-red-600">
+                Ver carros disponíveis <ArrowRight className="h-4 w-4" />
               </a>
-              {featured && (
-                <button onClick={() => onSelectCar(featured)} className="inline-flex min-h-12 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-6 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15">
-                  Ver destaque <ChevronRight className="h-4 w-4" />
-                </button>
-              )}
+              <button onClick={() => document.getElementById('vehicle-match')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex min-h-13 items-center gap-2 rounded-full border border-slate-300 bg-white px-6 text-sm font-extrabold text-slate-800 shadow-sm transition hover:border-red-300 hover:text-red-700">
+                Descobrir meu modelo <Sparkles className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-9 grid max-w-lg grid-cols-3 gap-3 border-t border-slate-200 pt-6">
+              <div><strong className="block text-lg font-black text-slate-950">360°</strong><span className="text-xs text-slate-500">por dentro e fora</span></div>
+              <div><strong className="block text-lg font-black text-slate-950">Estoque real</strong><span className="text-xs text-slate-500">atualizado</span></div>
+              <div><strong className="block text-lg font-black text-slate-950">Compra segura</strong><span className="text-xs text-slate-500">com procedência</span></div>
             </div>
           </div>
 
-          {featured && <div className="mt-9 lg:absolute lg:right-12 lg:top-1/2 lg:mt-0 lg:w-[47%] lg:-translate-y-1/2"><FeaturedVehicleMedia key={featured.id} car={featured} onInteractiveChange={setFeaturedPaused} /></div>}
-
-          <div className="mt-12 grid max-w-xl grid-cols-3 gap-3 border-t border-white/15 pt-6 text-sm">
-            <div><strong className="block text-xl font-black">360°</strong><span className="text-xs text-slate-400">visão completa</span></div>
-            <div><strong className="block text-xl font-black">100+</strong><span className="text-xs text-slate-400">itens avaliados</span></div>
-            <div><strong className="block text-xl font-black">1:1</strong><span className="text-xs text-slate-400">atendimento</span></div>
+          <div className="min-w-0">
+            {featured ? <>
+              <div className="mb-4 flex items-end justify-between gap-4">
+                <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Destaque da vez</p><h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{featured.brand} {featured.model}</h2><p className="mt-1 text-sm font-semibold text-slate-500">{featured.version} · {featured.year}</p></div>
+                <button onClick={() => onSelectCar(featured)} className="hidden min-h-11 shrink-0 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-500 sm:inline-flex">Conhecer <ChevronRight className="h-4 w-4" /></button>
+              </div>
+              <FeaturedVehicleMedia key={featured.id} car={featured} onInteractiveChange={setFeaturedPaused} />
+              <div className="mt-4 flex items-center justify-between gap-3">
+                {featuredCars.length > 1 ? <div className="flex items-center gap-2" aria-label="Veículos em destaque"><button onClick={() => setFeaturedIndex(index => (index - 1 + featuredCars.length) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Destaque anterior"><ArrowLeft className="h-4 w-4" /></button><div className="flex gap-1.5">{featuredCars.map((car, index) => <button key={car.id} onClick={() => setFeaturedIndex(index)} aria-label={`Ver ${car.brand} ${car.model}`} className={`h-2 rounded-full transition-all ${index === featuredIndex ? 'w-8 bg-red-600' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}</div><button onClick={() => setFeaturedIndex(index => (index + 1) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Próximo destaque"><ArrowRight className="h-4 w-4" /></button></div> : <span />}
+                <button onClick={() => onSelectCar(featured)} className="inline-flex min-h-11 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white sm:hidden">Conhecer <ChevronRight className="h-4 w-4" /></button>
+              </div>
+            </> : <div className="flex aspect-video items-center justify-center rounded-[28px] bg-slate-900 text-sm font-bold text-white">Novos veículos em breve</div>}
           </div>
-
-          {featuredCars.length > 1 && <div className="mt-8 flex items-center gap-3" aria-label="Veículos em destaque"><button onClick={() => setFeaturedIndex(index => (index - 1 + featuredCars.length) % featuredCars.length)} className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur hover:bg-white/10" aria-label="Destaque anterior"><ArrowLeft className="h-4 w-4" /></button><div className="flex gap-2">{featuredCars.map((car, index) => <button key={car.id} onClick={() => setFeaturedIndex(index)} aria-label={`Ver ${car.brand} ${car.model}`} className={`h-2 rounded-full transition-all ${index === featuredIndex ? 'w-10 bg-red-500' : 'w-2 bg-white/35 hover:bg-white/70'}`} />)}</div><button onClick={() => setFeaturedIndex(index => (index + 1) % featuredCars.length)} className="grid h-11 w-11 place-items-center rounded-full border border-white/20 bg-black/25 text-white backdrop-blur hover:bg-white/10" aria-label="Próximo destaque"><ArrowRight className="h-4 w-4" /></button></div>}
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto -mt-20 max-w-[1380px] px-4 sm:px-8">
+      <section className="relative z-10 mx-auto -mt-10 max-w-[1380px] px-4 sm:px-8">
         <div className="rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_30px_80px_rgba(15,23,42,.16)] sm:p-6">
           <div className="grid gap-3 lg:grid-cols-[1.7fr_.7fr_.7fr_auto]">
             <label className="flex min-h-14 items-center gap-3 rounded-2xl bg-slate-100 px-4 focus-within:ring-2 focus-within:ring-red-500">

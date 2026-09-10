@@ -4,6 +4,7 @@ export interface SalesChatResponse {
   reply: string;
   whatsapp: string;
   leadScore: number;
+  stockCount?: number;
 }
 
 export interface SalesChatInsight {

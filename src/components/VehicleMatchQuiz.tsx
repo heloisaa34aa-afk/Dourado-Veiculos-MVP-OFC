@@ -73,7 +73,7 @@ export function VehicleMatchQuiz({ cars, onSelectCar, onSubmitLead }: VehicleMat
 
   return (
     <>
-      <section className="mx-auto max-w-[1380px] px-4 pb-6 pt-14 sm:px-8 lg:pt-20">
+      <section id="vehicle-match" className="mx-auto max-w-[1380px] scroll-mt-24 px-4 pb-6 pt-14 sm:px-8 lg:pt-20">
         <div className="relative overflow-hidden rounded-[34px] bg-slate-950 px-6 py-9 text-white shadow-xl sm:px-10 lg:flex lg:items-center lg:justify-between lg:px-14 lg:py-12">
           <div className="absolute -right-12 -top-20 h-64 w-64 rounded-full bg-red-600/30 blur-3xl" />
           <div className="relative max-w-2xl">
