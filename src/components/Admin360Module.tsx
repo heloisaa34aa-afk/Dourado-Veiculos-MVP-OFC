@@ -9,6 +9,7 @@ import {
   X, Info, Edit2, Move, Focus, Eye, EyeOff, Save, Play, ArrowLeft, Loader2, Camera, MousePointer2, Maximize, Minimize, PanelRightClose, PanelRightOpen, Car as CarIcon, Smartphone
 , UploadCloud } from 'lucide-react';
 import { Car, Vehicle360Hotspot, Vehicle360DamageMarker, Vehicle360MarkerPosition } from '../types';
+import { trackingProvider } from '../services/trackingProvider';
 
 interface Admin360ModuleProps {
   cars: Car[];
@@ -205,34 +206,18 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
     setFormType(type);
 
     try {
-      const endpoint = import.meta.env.VITE_TRACKING_ENDPOINT;
-      if (!endpoint) {
-        alert("Rastreamento automático indisponível (VITE_TRACKING_ENDPOINT não configurado). A posição inicial foi salva.");
-        setMode('idle');
-        return;
-      }
-
       setTrackProgress('Rastreando com TAPIR...');
-      
-      const response = await fetch(`${endpoint}/track`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          frames: project.frames?.map(f => f.imageUrl) || [],
-          initialFrame,
-          initialX,
-          initialY,
-          projectId: project.id,
-          markerId,
-          markerType: type
-        })
+
+      const result = await trackingProvider.track({
+        frames: project.frames?.map(f => f.imageUrl) || [],
+        initialFrame,
+        initialX,
+        initialY,
+        projectId: project.id,
+        markerId,
+        markerType: type
       });
-
-      if (!response.ok) {
-        throw new Error('Falha no serviço de rastreamento');
-      }
-
-      const result = await response.json();
+      if (!result.positions?.length) throw new Error(result.error || 'O serviço não retornou posições para revisão.');
       setTrackedPositions(result.positions);
       setMode('review');
     } catch (err: any) {

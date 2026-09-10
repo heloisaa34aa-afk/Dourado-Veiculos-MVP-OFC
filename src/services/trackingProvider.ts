@@ -1,4 +1,5 @@
 import { Vehicle360MarkerPosition } from '../types';
+import { getTrackingEndpoint } from '../config/tracking';
 
 export interface TrackingRequest {
   frames: string[];
@@ -39,10 +40,7 @@ export interface MarkerTrackingProvider {
 
 export const trackingProvider: MarkerTrackingProvider = {
   async track(request: TrackingRequest): Promise<TrackingResult> {
-    const endpoint = import.meta.env.VITE_TRACKING_ENDPOINT;
-    if (!endpoint) {
-      throw new Error("Rastreamento automático indisponível (VITE_TRACKING_ENDPOINT não configurado)");
-    }
+    const endpoint = getTrackingEndpoint();
     
     try {
       const controller = new AbortController();
