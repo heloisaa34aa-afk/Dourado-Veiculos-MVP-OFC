@@ -10,6 +10,11 @@ import {
 , UploadCloud } from 'lucide-react';
 import { Car, Vehicle360Hotspot, Vehicle360DamageMarker, Vehicle360MarkerPosition } from '../types';
 import { trackingProvider } from '../services/trackingProvider';
+import {
+  VEHICLE_PART_PRESETS,
+  VEHICLE_PART_PRESET_GROUPS,
+  VehiclePartPreset,
+} from '../config/vehiclePartPresets';
 
 interface Admin360ModuleProps {
   cars: Car[];
@@ -78,6 +83,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   
   const [poiForm, setPoiForm] = useState({ title: '', description: '', file: null as File | null });
   const [damageForm, setDamageForm] = useState({ title: '', description: '', category: 'Outro', files: [] as File[] });
+  const [selectedPartPreset, setSelectedPartPreset] = useState<VehiclePartPreset | null>(null);
 
   const [trackProgress, setTrackProgress] = useState('');
   const [trackedPositions, setTrackedPositions] = useState<Vehicle360MarkerPosition[]>([]);
@@ -175,7 +181,11 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
     if (mode === 'add_poi_pick') {
       setDraftPos({ x, y, frame: currentFrame });
       setFormType('poi');
-      setPoiForm({ title: '', description: '', file: null });
+      setPoiForm({
+        title: selectedPartPreset?.title || '',
+        description: selectedPartPreset?.description || '',
+        file: null,
+      });
       setMode('form');
       setPanelOpen(true);
     } else if (mode === 'add_damage_pick') {
@@ -197,6 +207,21 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
         }].sort((a, b) => a.frameNumber - b.frameNumber);
       });
     }
+  };
+
+  const beginGuidedPartTracking = (preset: VehiclePartPreset) => {
+    setSelectedPartPreset(preset);
+    setDraftPos(null);
+    setFormType('poi');
+    setPoiForm({ title: preset.title, description: preset.description, file: null });
+    setMode('add_poi_pick');
+    setPanelOpen(true);
+  };
+
+  const cancelMarkerCreation = () => {
+    setSelectedPartPreset(null);
+    setDraftPos(null);
+    setMode('idle');
   };
 
   const startAutoTrack = async (markerId: string, initialFrame: number, initialX: number, initialY: number, type: 'poi' | 'damage') => {
@@ -274,6 +299,8 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
       }
       await reload();
       setMode('idle');
+      setSelectedPartPreset(null);
+      setDraftPos(null);
       setEditingMarkerId(null);
       setTrackedPositions([]);
     } catch (err: any) {
@@ -296,6 +323,8 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
 
   const cancelTracking = () => {
     setMode('idle');
+    setSelectedPartPreset(null);
+    setDraftPos(null);
     setEditingMarkerId(null);
     setTrackedPositions([]);
   };
@@ -370,8 +399,15 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
         <div className="p-6 h-full flex flex-col justify-center items-center text-center bg-indigo-50/50">
           <MousePointer2 size={48} className="text-indigo-400 mb-4 animate-bounce" />
           <h3 className="text-xl font-bold text-indigo-900 mb-2">Posicione o marcador</h3>
-          <p className="text-indigo-700 mb-8">Clique na imagem ao lado sobre a peça ou avaria que deseja marcar.</p>
-          <button onClick={() => setMode('idle')} className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
+          <p className="text-indigo-700 mb-3">
+            {selectedPartPreset?.instruction || 'Clique na imagem ao lado sobre a peça ou avaria que deseja marcar.'}
+          </p>
+          {selectedPartPreset && (
+            <span className="mb-8 rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700 shadow-sm">
+              O rastreio automático começará depois da confirmação
+            </span>
+          )}
+          <button onClick={cancelMarkerCreation} className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">Cancelar</button>
         </div>
       );
     }
@@ -381,7 +417,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
         <div className="p-6 h-full flex flex-col overflow-y-auto">
            <div className="flex justify-between items-center mb-6">
              <h3 className="text-lg font-bold text-gray-900">{formType === 'poi' ? 'Ponto de Interesse' : 'Avaria'}</h3>
-             <button onClick={() => setMode('idle')} className="text-gray-400 hover:text-gray-700"><X size={20}/></button>
+             <button onClick={cancelMarkerCreation} className="text-gray-400 hover:text-gray-700"><X size={20}/></button>
            </div>
            
            <div className="space-y-4 flex-1">
@@ -422,7 +458,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
              <button onClick={saveFormAndTrack} className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 shadow-sm flex items-center justify-center gap-2">
                Confirmar e Rastrear
              </button>
-             <button onClick={() => setMode('idle')} className="w-full py-3 text-gray-600 font-medium rounded-xl hover:bg-gray-100">
+             <button onClick={cancelMarkerCreation} className="w-full py-3 text-gray-600 font-medium rounded-xl hover:bg-gray-100">
                Cancelar
              </button>
            </div>
@@ -581,15 +617,44 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
     return (
       <div className="h-full flex flex-col">
         <div className="p-4 border-b border-gray-200 space-y-2 bg-gray-50/50">
-          <button onClick={() => { setMode('add_poi_pick'); setPanelOpen(false); }} className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm transition-transform active:scale-95">
+          <button onClick={() => { setSelectedPartPreset(null); setMode('add_poi_pick'); setPanelOpen(false); }} className="w-full flex items-center justify-center gap-2 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm transition-transform active:scale-95">
             <Plus size={18} /> Adicionar Ponto de Interesse
           </button>
-          <button onClick={() => { setMode('add_damage_pick'); setPanelOpen(false); }} className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 shadow-sm transition-transform active:scale-95">
+          <button onClick={() => { setSelectedPartPreset(null); setMode('add_damage_pick'); setPanelOpen(false); }} className="w-full flex items-center justify-center gap-2 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 shadow-sm transition-transform active:scale-95">
             <Plus size={18} /> Adicionar Avaria
           </button>
         </div>
         
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <section className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-3">
+            <div className="mb-1 flex items-center gap-2 text-sm font-bold text-indigo-950">
+              <Focus size={16} className="text-indigo-600" /> Rastreios rápidos
+            </div>
+            <p className="mb-3 text-xs leading-relaxed text-indigo-700">
+              Escolha a peça, abra um frame em que ela esteja visível e marque apenas uma vez.
+            </p>
+            <div className="space-y-3">
+              {VEHICLE_PART_PRESET_GROUPS.map((group) => (
+                <div key={group}>
+                  <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-500">{group}</div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {VEHICLE_PART_PRESETS.filter((preset) => preset.group === group).map((preset) => (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => beginGuidedPartTracking(preset)}
+                        title={preset.instruction}
+                        className="min-h-10 rounded-lg border border-indigo-100 bg-white px-2 py-2 text-left text-[11px] font-semibold leading-tight text-gray-700 transition-colors hover:border-indigo-300 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {preset.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <h4 className="font-semibold text-gray-900 text-sm uppercase tracking-wider mb-2">Marcadores Ativos</h4>
           
           {hotspots.length === 0 && damageMarkers.length === 0 && (
@@ -744,7 +809,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
                
                {(mode === 'add_poi_pick' || mode === 'add_damage_pick') && (
                  <div className="absolute top-16 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur text-indigo-900 px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-3 animate-pulse border border-indigo-100 z-20">
-                    <MousePointer2 size={20} /> Clique na peça ou avaria
+                    <MousePointer2 size={20} /> {selectedPartPreset ? `Marque: ${selectedPartPreset.title}` : 'Clique na peça ou avaria'}
                  </div>
                )}
             </div>

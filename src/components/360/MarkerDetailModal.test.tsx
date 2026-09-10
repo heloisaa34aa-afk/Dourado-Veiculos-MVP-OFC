@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MarkerDetailModal } from './MarkerDetailModal';
 
 describe('MarkerDetailModal', () => {
-  it('renders correctly and takes full screen classes', () => {
+  it('renders an enlarged contained preview instead of a full-screen image', () => {
     const { container } = render(
       <MarkerDetailModal 
         isOpen={true} 
@@ -14,5 +14,8 @@ describe('MarkerDetailModal', () => {
       />
     );
     expect(screen.getByText('Test Modal')).toBeDefined();
+    expect(screen.getByRole('dialog').className).toContain('max-w-4xl');
+    expect(screen.getByRole('dialog').className).not.toContain('h-full');
+    expect(screen.getByRole('button', { name: 'Fechar detalhes' })).toBeDefined();
   });
 });
