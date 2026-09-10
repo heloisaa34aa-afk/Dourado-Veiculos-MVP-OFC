@@ -16,6 +16,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Car, LeadMessage, } from '../types';
 import { vehicle360Service } from '../services/vehicle360.service';
 import { ClientPoiPanel } from './ClientPoiPanel';
+import { PublicPromotion } from './PublicPromotion';
+import type { SiteBanner } from '../services/banner.service';
 
 const HOTSPOT_VISIBLE_RANGE = 2;
 
@@ -28,10 +30,11 @@ interface CarDetailsProps {
   car: Car;
   onBack: () => void;
   onSubmitLead: (lead: Omit<LeadMessage, 'id' | 'createdAt' | 'status'>) => void;
+  banners?: SiteBanner[];
 }
 
 
-export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProps) {
+export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: CarDetailsProps) {
   const exterior360 = useVehicle360(car.id, 'public', 'exterior');
   const interior360 = useVehicle360(car.id, 'public', 'interior');
   type VehicleMediaItem = 
@@ -139,6 +142,13 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lightboxImage, galleryLightboxIndex, car.images]);
+
+  useEffect(() => {
+    if (!lightboxImage && galleryLightboxIndex === null) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = previous; };
+  }, [galleryLightboxIndex, lightboxImage]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -554,13 +564,20 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
             </div>
           </div>
         </div>
+
+        {banners.some(banner => banner.placement === 'home_inline') && (
+          <section aria-label="Ofertas para você" className="space-y-4 pt-2">
+            <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Condições especiais</p><h2 className="mt-1 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">Ofertas para aproveitar este veículo.</h2></div>
+            <PublicPromotion banners={banners} placement="home_inline" />
+          </section>
+        )}
       </div>
 
       {/* FULLSCREEN LIGHTBOX WITH ZOOM & PAN */}
       <AnimatePresence>
         {lightboxImage && (
           <div 
-            className="fixed inset-0 z-60 bg-black/95 backdrop-blur-2xl flex items-center justify-center select-none"
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex items-center justify-center select-none"
             onClick={() => {
               setLightboxImage(null);
               setLightboxZoom(1);
@@ -569,13 +586,13 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
           >
             {/* Top Toolbar */}
             <div 
-              className="absolute top-4 right-4 z-70 flex items-center gap-2 bg-slate-900/90 border border-slate-800 p-2 rounded-2xl shadow-2xl"
+              className="fixed right-3 top-[max(.75rem,env(safe-area-inset-top))] z-[1010] flex items-center gap-1 rounded-2xl border border-white/15 bg-slate-900/95 p-1.5 shadow-2xl sm:right-5 sm:gap-2 sm:p-2"
               onClick={(e) => e.stopPropagation()}
             >
               <button
                 type="button"
                 onClick={() => setLightboxZoom(prev => Math.min(prev + 0.5, 3))}
-                className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer sm:block"
                 title="Aumentar Zoom"
               >
                 <ZoomIn className="w-5 h-5" />
@@ -589,7 +606,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                     return n;
                   });
                 }}
-                className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer sm:block"
                 title="Reduzir Zoom"
               >
                 <ZoomOut className="w-5 h-5" />
@@ -613,8 +630,9 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                   setLightboxZoom(1);
                   setLightboxPan({ x: 0, y: 0 });
                 }}
-                className="p-2 text-slate-300 hover:text-red-500 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-red-600 text-white transition-colors hover:bg-red-500 cursor-pointer"
                 title="Fechar (ESC)"
+                aria-label="Fechar imagem em tela cheia"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -675,7 +693,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
       <AnimatePresence>
         {galleryLightboxIndex !== null && car.images && car.images.length > 0 && (
           <div 
-            className="fixed inset-0 z-60 bg-black/95 backdrop-blur-2xl flex flex-col justify-between p-3 sm:p-6 select-none"
+            className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-2xl flex flex-col justify-between p-3 pt-[max(.75rem,env(safe-area-inset-top))] sm:p-6 select-none"
             onClick={() => {
               setGalleryLightboxIndex(null);
               setGalleryZoom(1);
@@ -684,12 +702,12 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
           >
             {/* Top Toolbar */}
             <div 
-              className="w-full flex items-center justify-between z-70 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 px-4 py-2.5 rounded-2xl shadow-2xl"
+              className="w-full flex items-center justify-between z-[1010] bg-slate-900/95 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl shadow-2xl sm:px-4 sm:py-2.5"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Counter */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs sm:text-sm font-extrabold text-white tracking-wide">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="max-w-[130px] truncate text-xs font-extrabold text-white tracking-wide sm:max-w-none sm:text-sm">
                   {car.brand} {car.model}
                 </span>
                 <span className="text-xs font-mono font-bold text-red-500 bg-red-950/80 border border-red-800/60 px-2.5 py-0.5 rounded-full">
@@ -702,7 +720,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                 <button
                   type="button"
                   onClick={() => setGalleryZoom(prev => Math.min(prev + 0.5, 3))}
-                  className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer sm:block"
                   title="Aumentar Zoom"
                 >
                   <ZoomIn className="w-5 h-5" />
@@ -716,7 +734,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                       return n;
                     });
                   }}
-                  className="p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="hidden p-2 text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-colors cursor-pointer sm:block"
                   title="Reduzir Zoom"
                 >
                   <ZoomOut className="w-5 h-5" />
@@ -732,7 +750,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                 >
                   100%
                 </button>
-                <div className="w-px h-5 bg-slate-800 my-auto" />
+                <div className="hidden w-px h-5 bg-slate-800 my-auto sm:block" />
                 <button
                   type="button"
                   onClick={() => {
@@ -740,8 +758,9 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                     setGalleryZoom(1);
                     setGalleryPan({ x: 0, y: 0 });
                   }}
-                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-xl bg-red-600 text-white transition-colors hover:bg-red-500 cursor-pointer"
                   title="Fechar (ESC)"
+                  aria-label="Fechar galeria em tela cheia"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -759,7 +778,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                   setGalleryZoom(1);
                   setGalleryPan({ x: 0, y: 0 });
                 }}
-                className="absolute left-2 sm:left-4 z-70 p-3.5 bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700/80 rounded-2xl shadow-2xl transition-all cursor-pointer active:scale-95"
+                className="absolute left-2 sm:left-4 z-[1010] p-3.5 bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700/80 rounded-2xl shadow-2xl transition-all cursor-pointer active:scale-95"
                 title="Imagem Anterior (←)"
               >
                 <ChevronLeft className="w-6 h-6" />
@@ -845,7 +864,7 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
                   setGalleryZoom(1);
                   setGalleryPan({ x: 0, y: 0 });
                 }}
-                className="absolute right-2 sm:right-4 z-70 p-3.5 bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700/80 rounded-2xl shadow-2xl transition-all cursor-pointer active:scale-95"
+                className="absolute right-2 sm:right-4 z-[1010] p-3.5 bg-slate-900/80 hover:bg-red-600 text-white border border-slate-700/80 rounded-2xl shadow-2xl transition-all cursor-pointer active:scale-95"
                 title="Próxima Imagem (→)"
               >
                 <ChevronRight className="w-6 h-6" />
@@ -854,26 +873,24 @@ export default function CarDetails({ car, onBack, onSubmitLead }: CarDetailsProp
 
             {/* Bottom Thumbnails Strip */}
             <div 
-              className="w-full max-w-4xl mx-auto z-70 bg-slate-900/80 backdrop-blur-md border border-slate-800/80 p-2 sm:p-3 rounded-2xl shadow-2xl"
+              className="w-full max-w-4xl mx-auto z-[1010] bg-slate-900/80 backdrop-blur-md border border-slate-800/80 p-2 sm:p-3 rounded-2xl shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-2 overflow-x-auto scrollbar-thin py-0.5 px-1">
-                {galleryItems.map((item, idx) => (
+                {car.images.map((imageUrl, idx) => (
                   <button
-                    key={idx}
+                    key={imageUrl}
                     type="button"
                     onClick={() => {
-                      setSelectedMediaId(item.id);
-                      setUserManuallySelected(true);
+                      setGalleryLightboxIndex(idx);
                       setGalleryZoom(1);
                       setGalleryPan({ x: 0, y: 0 });
                     }}
                     className={`relative w-16 sm:w-20 aspect-video rounded-xl overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
-                      selectedMediaId === item.id || (!selectedMediaId && idx === 0) ? 'border-red-500 scale-105 shadow-lg ring-2 ring-red-500/50' : 'border-slate-800 opacity-60 hover:opacity-100'
+                      galleryLightboxIndex === idx ? 'border-red-500 scale-105 shadow-lg ring-2 ring-red-500/50' : 'border-slate-800 opacity-60 hover:opacity-100'
                     }`}
                   >
-                    <img src={item.thumbnail} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                    {item.type === '360' && <div className="absolute inset-0 flex items-center justify-center bg-black/30"><RotateCcw className="w-5 h-5 text-white" /></div>}
+                    <img src={imageUrl} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                   </button>
                 ))}
               </div>

@@ -35,6 +35,7 @@ import { vehicleService } from './services/vehicle.service';
 import { authService } from './services/auth.service';
 import { usePublicBanners } from './hooks/usePublicBanners';
 import { SalesAssistantChat } from './components/SalesAssistantChat';
+import type { SiteBanner } from './services/banner.service';
 
 export default function App() {
   // Navigation states
@@ -717,7 +718,7 @@ export default function App() {
 
           <Route path="/veiculo/:vehicleId" element={
             <Suspense fallback={<RouteLoading label="Carregando detalhes do veículo..." />}>
-              <CarDetailsWrapper onSubmitLead={handleSubmitLead} />
+              <CarDetailsWrapper onSubmitLead={handleSubmitLead} banners={publicBanners} />
             </Suspense>
           } />
 
@@ -837,7 +838,7 @@ function RouteLoading({ label, dark = false }: { label: string; dark?: boolean }
   );
 }
 
-function CarDetailsWrapper({ onSubmitLead }: { onSubmitLead: any }) {
+function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banners: SiteBanner[] }) {
   const { vehicleId } = useParams<{ vehicleId: string }>();
   const decodedVehicleId = vehicleId ? decodeURIComponent(vehicleId).trim() : null;
   const navigate = useNavigate();
@@ -895,7 +896,8 @@ function CarDetailsWrapper({ onSubmitLead }: { onSubmitLead: any }) {
     <CarDetails 
       car={vehicle} 
       onBack={() => navigate('/')} 
-      onSubmitLead={onSubmitLead} 
+      onSubmitLead={onSubmitLead}
+      banners={banners}
     />
   );
 }
