@@ -6,6 +6,7 @@ import {
   Vehicle360DamageMarker,
   Vehicle360DamageImage
 } from '../types';
+import { vehicle360Storage } from './vehicle360.storage';
 
 
 export function normalizeMarkerPosition(position: any) {
@@ -372,6 +373,26 @@ export const vehicle360Service = {
       .delete()
       .eq('id', projectId);
 
+    if (error) throw error;
+  },
+
+  async deleteProjectsByVehicle(vehicleId: string): Promise<void> {
+    const { data: projects, error: lookupError } = await supabase
+      .from('vehicle_360_projects')
+      .select('id')
+      .eq('vehicle_id', vehicleId);
+    if (lookupError) throw lookupError;
+
+    for (const project of projects || []) {
+      await vehicle360Storage.deleteProjectStorage(vehicleId, project.id).catch(error => {
+        console.warn('[360] Não foi possível limpar todos os arquivos do projeto:', error);
+      });
+    }
+
+    const { error } = await supabase
+      .from('vehicle_360_projects')
+      .delete()
+      .eq('vehicle_id', vehicleId);
     if (error) throw error;
   },
 

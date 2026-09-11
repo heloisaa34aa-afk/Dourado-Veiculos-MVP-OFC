@@ -6,6 +6,20 @@ import { settingsService } from '../services/settings.service';
 
 interface ChatMessage { role: 'user' | 'assistant'; content: string }
 
+function splitAssistantReply(reply: string) {
+  const paragraphs = reply.split(/\n{2,}/).map(item => item.trim()).filter(Boolean);
+  if (paragraphs.length > 1) return paragraphs.slice(0, 4);
+  if (reply.length < 260) return [reply.trim()];
+  const sentences = reply.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(item => item.trim()).filter(Boolean) || [reply];
+  const chunks: string[] = [];
+  for (const sentence of sentences) {
+    const last = chunks[chunks.length - 1];
+    if (last && `${last} ${sentence}`.length <= 230) chunks[chunks.length - 1] = `${last} ${sentence}`;
+    else chunks.push(sentence);
+  }
+  return chunks.slice(0, 4);
+}
+
 export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
   const [open, setOpen] = useState(false);
   const [started, setStarted] = useState(false);
@@ -16,6 +30,9 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const pendingRef = useRef<string[]>([]);
+  const batchTimerRef = useRef<number | null>(null);
+  const requestInFlightRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -32,22 +49,40 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
     return number ? `https://wa.me/${number.startsWith('55') ? number : `55${number}`}?text=${encodeURIComponent(`Olá, vim pelo site da Dourado Veículos.${vehicleTitle ? ` Tenho interesse no ${vehicleTitle}.` : ''}\n\nResumo da conversa:\n${summary}`)}` : '#';
   }, [messages, vehicleTitle, whatsapp]);
 
-  const send = async (message: string) => {
-    const clean = message.trim();
-    if (!clean || busy) return;
-    setMessages(current => [...current, { role: 'user', content: clean }]);
-    setText('');
+  useEffect(() => () => {
+    if (batchTimerRef.current !== null) window.clearTimeout(batchTimerRef.current);
+  }, []);
+
+  const processPending = async () => {
+    if (requestInFlightRef.current || pendingRef.current.length === 0) return;
+    const batchedMessages = pendingRef.current.splice(0);
+    requestInFlightRef.current = true;
     setBusy(true);
     try {
-      const result = await salesChatService.send({ message: clean, vehicleId: vehicle?.id, vehicleTitle, customerName: name, customerPhone: phone });
-      setMessages(current => [...current, { role: 'assistant', content: result.reply }]);
+      const result = await salesChatService.send({ message: batchedMessages.join('\n'), vehicleId: vehicle?.id, vehicleTitle, customerName: name, customerPhone: phone });
+      const replies = splitAssistantReply(result.reply);
+      setMessages(current => [...current, ...replies.map(content => ({ role: 'assistant' as const, content }))]);
       setWhatsapp(result.whatsapp || '');
     } catch (error) {
       setMessages(current => [...current, { role: 'assistant', content: error instanceof Error ? error.message : 'Não consegui responder agora. Você pode falar com nossa equipe pelo WhatsApp.' }]);
     } finally {
+      requestInFlightRef.current = false;
       setBusy(false);
       window.setTimeout(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' }), 20);
+      if (pendingRef.current.length) {
+        batchTimerRef.current = window.setTimeout(() => void processPending(), 250);
+      }
     }
+  };
+
+  const send = (message: string) => {
+    const clean = message.trim();
+    if (!clean) return;
+    setMessages(current => [...current, { role: 'user', content: clean }]);
+    setText('');
+    pendingRef.current.push(clean);
+    if (batchTimerRef.current !== null) window.clearTimeout(batchTimerRef.current);
+    batchTimerRef.current = window.setTimeout(() => void processPending(), requestInFlightRef.current ? 250 : 550);
   };
 
   const submit = (event: FormEvent) => { event.preventDefault(); void send(text); };
@@ -96,14 +131,14 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
               {vehicleTitle && <div className="border-b border-red-100 bg-red-50 px-4 py-2 text-xs font-semibold text-red-800">Conversando sobre: {vehicleTitle}</div>}
               <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto overscroll-contain bg-slate-50 p-4">
                 {messages.map((message, index) => <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[86%] whitespace-pre-line rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${message.role === 'user' ? 'rounded-br-sm bg-red-600 text-white' : 'rounded-bl-sm border border-slate-200 bg-white text-slate-700 shadow-sm'}`}>{message.content}</div></div>)}
-                {busy && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Analisando as melhores opções...</div>}
+                {busy && <div className="flex items-center gap-2 text-xs text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />Preparando a resposta — você pode continuar escrevendo.</div>}
               </div>
 
               <div className="flex gap-2 overflow-x-auto border-t border-slate-200 bg-white px-3 py-2 text-xs">
                 {['Quero financiar', 'Tenho carro na troca', 'Quero agendar uma visita'].map(option => <button key={option} onClick={() => void send(option)} className="shrink-0 rounded-full border border-slate-200 px-3 py-1.5 font-semibold text-slate-700">{option}</button>)}
               </div>
               <form onSubmit={submit} className="border-t border-slate-200 bg-white p-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
-                <div className="flex gap-2"><input value={text} onChange={e => setText(e.target.value)} maxLength={1200} placeholder="Digite sua dúvida..." className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-base outline-none focus:border-red-500" /><button disabled={busy || !text.trim()} aria-label="Enviar mensagem" className="rounded-xl bg-red-600 p-3 text-white disabled:opacity-40"><Send className="h-5 w-5" /></button></div>
+                <div className="flex gap-2"><input value={text} onChange={e => setText(e.target.value)} maxLength={1200} placeholder="Digite sua dúvida..." className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-base outline-none focus:border-red-500" /><button disabled={!text.trim()} aria-label="Enviar mensagem" className="rounded-xl bg-red-600 p-3 text-white disabled:opacity-40"><Send className="h-5 w-5" /></button></div>
                 <a href={whatsappUrl} target="_blank" rel="noreferrer" aria-disabled={!whatsapp} className={`mt-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl text-sm font-extrabold text-white transition ${whatsapp ? 'bg-emerald-600 hover:bg-emerald-700' : 'pointer-events-none bg-slate-300'}`}><MessageCircle className="h-5 w-5" />Falar agora pelo WhatsApp</a>
               </form>
             </>

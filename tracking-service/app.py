@@ -85,30 +85,26 @@ def generate_query_points(t, y, x, spacing=5, max_h=512, max_w=512):
             points.append([t, py, px])
     return points
 
-def aggregate_points(valid_points, valid_conf, prev_x, prev_y, jump_threshold=150.0):
-    if len(valid_points) < 3:
+def aggregate_points(valid_points, valid_conf):
+    if len(valid_points) < 1:
         return None, float(np.mean(valid_conf) if len(valid_conf)>0 else 0), "Poucos inliers"
         
     med_x = np.median(valid_points[:, 0])
     med_y = np.median(valid_points[:, 1])
     
     dists = np.sqrt((valid_points[:, 0] - med_x)**2 + (valid_points[:, 1] - med_y)**2)
-    inlier_mask = dists < 20.0
+    inlier_mask = dists < 32.0
     
     inliers = valid_points[inlier_mask]
     inlier_conf = valid_conf[inlier_mask]
     
-    if len(inliers) < 3:
+    if len(inliers) < 1:
         return None, float(np.mean(valid_conf) if len(valid_conf)>0 else 0), "Poucos inliers pós-mediana"
         
     final_x = np.median(inliers[:, 0])
     final_y = np.median(inliers[:, 1])
     final_conf = np.mean(inlier_conf)
     
-    jump_dist = np.sqrt((final_x - prev_x)**2 + (final_y - prev_y)**2)
-    if jump_dist > jump_threshold:
-        return None, float(final_conf), "Salto excessivo"
-        
     return (final_x, final_y), float(final_conf), None
 
 @app.cls(gpu="any", timeout=300)
@@ -152,7 +148,8 @@ class Tracker:
             occlusion = outputs['occlusion'][0]
             expected_dist = outputs['expected_dist'][0]
             
-            visibles = (1 - F.sigmoid(occlusion)) * (1 - F.sigmoid(expected_dist)) > 0.5
+            visibility_scores = (1 - F.sigmoid(occlusion)) * (1 - F.sigmoid(expected_dist))
+            visibles = visibility_scores > 0.25
             
         tracks = tracks.cpu().numpy()
         visibles = visibles.cpu().numpy()
@@ -161,8 +158,6 @@ class Tracker:
         results = []
         tracked_frames = 0
         quality_issues = []
-        prev_x, prev_y = x_px, y_px
-        
         for t in range(T):
             if t == initial_t:
                 results.append({
@@ -180,11 +175,9 @@ class Tracker:
             valid_points = tracks[vis_mask, t, :]
             valid_conf = confidence[vis_mask, t]
             
-            final_pos, final_conf, error_reason = aggregate_points(valid_points, valid_conf, prev_x, prev_y)
+            final_pos, final_conf, error_reason = aggregate_points(valid_points, valid_conf)
             
             if final_pos is None:
-                if error_reason == "Salto excessivo":
-                    quality_issues.append(f"Salto excessivo detectado no frame {t}.")
                 results.append({
                     "frameNumber": t,
                     "posX": req['initialX'],
@@ -196,7 +189,6 @@ class Tracker:
                 continue
                 
             final_x, final_y = final_pos
-            prev_x, prev_y = final_x, final_y
             tracked_frames += 1
             
             pct_x = max(0.0, min(100.0, (final_x / float(W)) * 100.0))

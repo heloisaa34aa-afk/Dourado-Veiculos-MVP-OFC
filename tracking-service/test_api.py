@@ -54,8 +54,7 @@ def test_aggregate_points_ideal():
         [99, 99], [99, 101], [101, 99]
     ])
     valid_conf = np.ones(9)
-    prev_x, prev_y = 90, 90
-    pos, conf, err = aggregate_points(valid_points, valid_conf, prev_x, prev_y)
+    pos, conf, err = aggregate_points(valid_points, valid_conf)
     assert err is None
     assert pos == (100.0, 100.0)
 
@@ -66,29 +65,26 @@ def test_aggregate_points_outlier_rejection():
         [99, 99], [500, 500], [10, 10]
     ])
     valid_conf = np.ones(9)
-    prev_x, prev_y = 100, 100
-    pos, conf, err = aggregate_points(valid_points, valid_conf, prev_x, prev_y)
+    pos, conf, err = aggregate_points(valid_points, valid_conf)
     assert err is None
     assert pos == (100.0, 100.0)
 
-def test_aggregate_points_too_few():
+def test_aggregate_points_accepts_partial_visible_grid():
     valid_points = np.array([[100, 100], [101, 100]])
     valid_conf = np.ones(2)
-    prev_x, prev_y = 100, 100
-    pos, conf, err = aggregate_points(valid_points, valid_conf, prev_x, prev_y)
-    assert pos is None
-    assert "Poucos inliers" in err
+    pos, conf, err = aggregate_points(valid_points, valid_conf)
+    assert pos == (100.5, 100.0)
+    assert err is None
 
-def test_aggregate_points_excessive_jump():
+def test_aggregate_points_does_not_hide_valid_rotation_motion():
     valid_points = np.array([
         [300, 300], [301, 300], [299, 300],
         [300, 301], [300, 299]
     ])
     valid_conf = np.ones(5)
-    prev_x, prev_y = 100, 100
-    pos, conf, err = aggregate_points(valid_points, valid_conf, prev_x, prev_y, jump_threshold=150.0)
-    assert pos is None
-    assert err == "Salto excessivo"
+    pos, conf, err = aggregate_points(valid_points, valid_conf)
+    assert pos == (300.0, 300.0)
+    assert err is None
 
 @patch('app.requests.get')
 def test_load_video_resizing(mock_get):

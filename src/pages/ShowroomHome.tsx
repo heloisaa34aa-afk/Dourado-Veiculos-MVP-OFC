@@ -12,6 +12,7 @@ import { useVehicle360 } from '../hooks/useVehicle360';
 
 interface ShowroomHomeProps {
   cars: Car[];
+  loading: boolean;
   carsError: string | null;
   banners: SiteBanner[];
   onSelectCar: (car: Car) => void;
@@ -69,7 +70,7 @@ function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onIntera
   </div>;
 }
 
-export default function ShowroomHome({ cars, carsError, banners, onSelectCar, onSubmitLead }: ShowroomHomeProps) {
+export default function ShowroomHome({ cars, loading, carsError, banners, onSelectCar, onSubmitLead }: ShowroomHomeProps) {
   const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Todos');
   const [category, setCategory] = useState('Todos');
@@ -125,6 +126,21 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
 
   const clearFilters = () => { setSearch(''); setBrand('Todos'); setCategory('Todos'); };
 
+  if (loading && cars.length === 0) {
+    return (
+      <main aria-busy="true" className="min-h-screen bg-[#f3f4f6] px-5 py-12 sm:px-8">
+        <div className="mx-auto max-w-[1380px] animate-pulse">
+          <div className="grid gap-10 lg:grid-cols-2 lg:items-center">
+            <div className="space-y-5"><div className="h-8 w-44 rounded-full bg-slate-200"/><div className="h-16 max-w-xl rounded-2xl bg-slate-200 sm:h-28"/><div className="h-6 max-w-lg rounded bg-slate-200"/></div>
+            <div className="aspect-video rounded-[28px] bg-slate-900/90" />
+          </div>
+          <div className="mt-12 h-24 rounded-[28px] bg-white shadow-sm" />
+          <div className="mt-14 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{[0,1,2].map(item => <div key={item} className="aspect-[4/3] rounded-[28px] bg-white" />)}</div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="overflow-hidden bg-[#f3f4f6] text-slate-950">
       <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f7f7f8_55%,#eceff3_100%)]">
@@ -140,7 +156,7 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
               O carro certo para o seu <span className="text-red-600">momento.</span>
             </h1>
             <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-              Compare opções selecionadas, veja cada detalhe em 360° e encontre uma condição que faça sentido para você.
+              Encontre opções selecionadas para o seu momento, compare os detalhes e escolha com segurança.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
@@ -175,7 +191,7 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto -mt-10 max-w-[1380px] px-4 sm:px-8">
+      <section className="mx-auto max-w-[1380px] px-4 py-8 sm:px-8 sm:py-10">
         <div className="rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_30px_80px_rgba(15,23,42,.16)] sm:p-6">
           <div className="grid gap-3 lg:grid-cols-[1.7fr_.7fr_.7fr_auto]">
             <label className="flex min-h-14 items-center gap-3 rounded-2xl bg-slate-100 px-4 focus-within:ring-2 focus-within:ring-red-500">
@@ -193,9 +209,7 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
         </div>
       </section>
 
-      <VehicleMatchQuiz cars={available} onSelectCar={onSelectCar} onSubmitLead={onSubmitLead} />
-
-      <section id="estoque" className="mx-auto max-w-[1380px] scroll-mt-28 px-4 py-20 sm:px-8 lg:py-28">
+      <section id="estoque" className="mx-auto max-w-[1380px] scroll-mt-28 px-4 py-12 sm:px-8 lg:py-20">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.2em] text-red-600"><Sparkles className="h-4 w-4" /> Seleção atual</p>
@@ -225,6 +239,8 @@ export default function ShowroomHome({ cars, carsError, banners, onSelectCar, on
           </div>
         )}
       </section>
+
+      <VehicleMatchQuiz cars={available} onSelectCar={onSelectCar} onSubmitLead={onSubmitLead} />
 
       <div className="mx-auto max-w-[1380px] px-4 sm:px-8"><PublicPromotion banners={banners} placement="home_inline" /></div>
 

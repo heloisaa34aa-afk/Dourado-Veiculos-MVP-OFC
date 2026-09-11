@@ -41,6 +41,8 @@ export function ImageCoordinateStage({
 }: ImageCoordinateStageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const [displayedUrl, setDisplayedUrl] = useState(imageUrl);
+  const [previousUrl, setPreviousUrl] = useState<string | null>(null);
   const [imageRect, setImageRect] = useState<{ x: number, y: number, width: number, height: number } | null>(null);
 
   const calculateRect = () => {
@@ -93,7 +95,23 @@ export function ImageCoordinateStage({
   }, []);
 
   useEffect(() => {
-    calculateRect();
+    if (imageUrl === displayedUrl) {
+      calculateRect();
+      return;
+    }
+
+    let cancelled = false;
+    const nextImage = new Image();
+    nextImage.decoding = 'async';
+    nextImage.fetchPriority = 'high';
+    nextImage.onload = async () => {
+      try { await nextImage.decode?.(); } catch { /* onload is sufficient */ }
+      if (cancelled) return;
+      setPreviousUrl(displayedUrl);
+      setDisplayedUrl(imageUrl);
+    };
+    nextImage.src = imageUrl;
+    return () => { cancelled = true; };
   }, [imageUrl]);
 
   const handlePointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -138,12 +156,25 @@ export function ImageCoordinateStage({
       onPointerCancel={onPointerCancel}
       onPointerLeave={onPointerLeave}
     >
+      {previousUrl && previousUrl !== displayedUrl && (
+        <img
+          src={previousUrl}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 block h-full w-full object-contain"
+          draggable={false}
+          decoding="async"
+        />
+      )}
       <img
         ref={imageRef}
-        src={imageUrl}
+        src={displayedUrl}
         alt="360 View Frame"
-        className="w-full h-full object-contain pointer-events-none block"
-        onLoad={calculateRect}
+        className="relative z-[1] w-full h-full object-contain pointer-events-none block"
+        onLoad={() => {
+          calculateRect();
+          window.requestAnimationFrame(() => setPreviousUrl(null));
+        }}
         draggable={false}
         decoding="async"
         fetchPriority="high"

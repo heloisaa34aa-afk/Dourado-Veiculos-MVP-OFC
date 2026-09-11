@@ -21,6 +21,9 @@ function cleanList(value: unknown) {
   return Array.isArray(value) ? value.map(String).map(item => item.trim()).filter(Boolean).slice(0, 8) : [];
 }
 
+let catalogCache: { expiresAt: number; vehicles: StockVehicle[]; settings: Record<string, unknown> | null } | null = null;
+const CATALOG_CACHE_MS = 60_000;
+
 type StockVehicle = {
   id: string;
   brand?: string;
@@ -121,15 +124,16 @@ Deno.serve(async req => {
     const { error: userMessageError } = await admin.from('sales_chat_messages').insert({ session_id: session.id, role: 'user', content: message });
     if (userMessageError) throw userMessageError;
 
+    const cachedCatalog = catalogCache && catalogCache.expiresAt > Date.now() ? catalogCache : null;
     const [historyResult, vehiclesResult, settingsResult] = await Promise.all([
       admin.from('sales_chat_messages').select('role,content').eq('session_id', session.id).order('created_at', { ascending: false }).limit(14),
-      admin.from('vehicles').select('id,brand,model,version,year,mileage,transmission,fuel,color,price,status,sold')
+      cachedCatalog ? Promise.resolve({ data: cachedCatalog.vehicles, error: null }) : admin.from('vehicles').select('id,brand,model,version,year,mileage,transmission,fuel,color,price,status,sold')
         .or('sold.is.null,sold.eq.false')
         .or('status.is.null,status.neq.Vendido')
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false })
         .limit(30),
-      admin.from('settings').select('company_name,whatsapp,phone,hours,address').limit(1).maybeSingle(),
+      cachedCatalog ? Promise.resolve({ data: cachedCatalog.settings, error: null }) : admin.from('settings').select('company_name,whatsapp,phone,hours,address').limit(1).maybeSingle(),
     ]);
 
     if (vehiclesResult.error) {
@@ -144,6 +148,9 @@ Deno.serve(async req => {
     const settings = settingsResult.data;
 
     const stock = (vehicles || []) as StockVehicle[];
+    if (!cachedCatalog) {
+      catalogCache = { expiresAt: Date.now() + CATALOG_CACHE_MS, vehicles: stock, settings: settings as Record<string, unknown> | null };
+    }
     const apiKey = Deno.env.get('GEMINI_API_KEY');
     let result = {
       reply: catalogFallback(message, stock, body.vehicleId || session.vehicle_id),
@@ -168,7 +175,7 @@ Retorne APENAS JSON válido neste formato: {"reply":"resposta ao cliente","pain_
       try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(2800),
           body: JSON.stringify({ systemInstruction: { parts: [{ text: prompt }] }, contents, generationConfig: { responseMimeType: 'application/json', temperature: 0.3, maxOutputTokens: 350 } }),
         });
         if (!response.ok) console.error('[sales-assistant] Gemini:', response.status, await response.text());

@@ -43,17 +43,16 @@ export function Admin360Module({ cars }: Admin360ModuleProps) {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto mt-8">
-      <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Estúdio 360°</h2>
-        <p className="text-gray-500 mb-8">Selecione um veículo para gerenciar sua visão em 360 graus, pontos de interesse e avarias.</p>
+    <div className="mx-auto mt-4 max-w-5xl space-y-6">
+      <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+        <div className="bg-slate-950 px-6 py-8 text-white sm:px-10"><p className="text-xs font-bold uppercase tracking-[.18em] text-red-400">Estúdio de inspeção</p><h2 className="mt-2 text-3xl font-black">Configuração 360°</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Escolha o veículo e configure separadamente a visão externa ou interna, os pontos de interesse e as avarias.</p></div>
         
-        <div className="max-w-md mx-auto text-left">
+        <div className="mx-auto max-w-xl p-6 text-left sm:p-10">
           <label className="block text-sm font-medium text-gray-700 mb-2">Veículo</label>
           <select 
             value={selectedVehicleId}
             onChange={(e) => setSelectedVehicleId(e.target.value)}
-            className="w-full rounded-xl border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 py-3 px-4"
+            className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 font-semibold shadow-sm focus:border-red-500 focus:ring-red-500"
           >
             <option value="">-- Selecione um veículo --</option>
             {cars.map(car => (
@@ -71,7 +70,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
     project, loading, reload, currentFrame, setCurrentFrame, totalFrames,
     handlePointerDown, handlePointerMove, handlePointerUp,
     nextFrame, prevFrame, uploadFrames, removeFrame, uploading, uploadProgress,
-    publishProject, unpublishProject, hotspots, damageMarkers,
+    publishProject, unpublishProject, deleteProject, hotspots, damageMarkers,
     createHotspot, updateHotspot, deleteHotspot, 
     createDamageMarker, updateDamageMarker, deleteDamageMarker
   } = useVehicle360(vehicleId, 'admin', viewType);
@@ -139,10 +138,10 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   if (!project) {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 h-[100dvh]">
-        <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shadow-sm shrink-0">
+        <div className="min-h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 shadow-sm shrink-0">
           <div className="flex items-center gap-4">
-            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
-              <ArrowLeft size={20} />
+            <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
+              <ArrowLeft size={20} /> Voltar aos veículos
             </button>
             <div>
               <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
@@ -150,6 +149,10 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
                 {car.brand} {car.model}
               </h1>
             </div>
+          </div>
+          <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1">
+            <button onClick={() => onViewTypeChange('exterior')} className={`rounded-lg px-3 py-2 text-sm font-bold ${viewType === 'exterior' ? 'bg-white text-gray-950 shadow' : 'text-gray-500'}`}>Externo</button>
+            <button onClick={() => onViewTypeChange('interior')} className={`rounded-lg px-3 py-2 text-sm font-bold ${viewType === 'interior' ? 'bg-white text-gray-950 shadow' : 'text-gray-500'}`}>Interno</button>
           </div>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
@@ -609,6 +612,16 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
               >
                 {isComplete ? 'Despublicar e Ocultar' : 'Publicar 360°'}
               </button>
+              <button
+                onClick={async () => {
+                  if (!window.confirm(`Excluir definitivamente o projeto 360° ${viewType === 'exterior' ? 'externo' : 'interno'}? Imagens e marcadores serão removidos.`)) return;
+                  await deleteProject();
+                  onBack();
+                }}
+                className="w-full rounded-xl border border-red-200 bg-red-50 py-3 font-bold text-red-700 transition hover:bg-red-100"
+              >
+                Excluir projeto {viewType === 'exterior' ? 'externo' : 'interno'}
+              </button>
            </div>
          </div>
        );
@@ -738,8 +751,8 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
       {!isFullscreen && (
         <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shadow-sm shrink-0 overflow-x-auto">
           <div className="flex items-center gap-4 shrink-0">
-            <button onClick={onBack} className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors">
-              <ArrowLeft size={20} />
+            <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
+              <ArrowLeft size={20} /> Voltar aos veículos
             </button>
             <div>
               <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">

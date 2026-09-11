@@ -60,7 +60,7 @@ export default function App() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const publicBanners = usePublicBanners();
+  const { banners: publicBanners, loading: bannersLoading } = usePublicBanners();
   const showPromotions = !location.pathname.startsWith('/admin')
     && !location.pathname.startsWith('/cliente')
     && !location.pathname.startsWith('/captura-360');
@@ -359,6 +359,7 @@ export default function App() {
             <Suspense fallback={<RouteLoading label="Preparando o showroom..." dark />}>
               <ShowroomHome
                 cars={cars}
+                loading={carsLoading || bannersLoading}
                 carsError={carsError}
                 banners={publicBanners}
                 onSelectCar={handleSelectCarDetails}

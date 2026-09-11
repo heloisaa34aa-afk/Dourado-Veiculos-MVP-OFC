@@ -23,6 +23,7 @@ import { vehicleMediaService } from '../services/vehicleMedia.service';
 import { useCategories } from '../hooks/useCategories';
 import { BannerManager } from './BannerManager';
 import { SalesChatInsights } from './SalesChatInsights';
+import { adminUsersService } from '../services/adminUsers.service';
 
 const trackingLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_TRACKING_LAB === 'true';
 
@@ -82,7 +83,6 @@ export default function AdminPanel({
   const [mediaGallery, setMediaGallery] = useState<string[]>([]);
   const [mediaVideoUrl, setMediaVideoUrl] = useState('');
   const [mediaVideoProvider, setMediaVideoProvider] = useState<'upload' | 'youtube'>('youtube');
-  const [media360, setMedia360] = useState<string[]>([]);
   const [mediaLoading, setMediaLoading] = useState(false);
 
   // Helper UUID generator for draft/new cars
@@ -119,6 +119,13 @@ export default function AdminPanel({
   const [editUserCity, setEditUserCity] = useState('');
   const [editUserRole, setEditUserRole] = useState<'admin' | 'client'>('client');
   const [editUserIsActive, setEditUserIsActive] = useState(true);
+  const [creatingAdmin, setCreatingAdmin] = useState(false);
+  const [newAdminName, setNewAdminName] = useState('');
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPhone, setNewAdminPhone] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [newAdminBusy, setNewAdminBusy] = useState(false);
+  const [newAdminError, setNewAdminError] = useState('');
   const [formGearbox, setFormGearbox] = useState('Automático');
   const [formFuel, setFormFuel] = useState('Flex');
   const [formColor, setFormColor] = useState('');
@@ -133,68 +140,14 @@ export default function AdminPanel({
   const [formImagesText, setFormImagesText] = useState(''); // Textarea with image URLs (one per line)
   const [formFeaturesText, setFormFeaturesText] = useState(''); // comma-separated features
 
-  // Load new tabs data dynamically on navigation or load
+  // Load only the data required by the active administrative surface.
   useEffect(() => {
-    // Load Quotes
-    quoteService.getQuotes().then(data => setQuotesList(data));
+    if (activeSection === 'users') {
+      adminUsersService.listUsers().then(setUsersList).catch(error => console.warn('Error loading users:', error));
+    }
+  }, [activeSection]);
 
-    // Compile distinct users/profiles
-    const compileUsers = async () => {
-      const userMap = new Map<string, UserProfile>();
-      
-      // Default initial staff users
-      userMap.set('user-admin-1', {
-        id: 'user-admin-1',
-        email: 'admin@douradoveiculos.com.br',
-        name: 'João Dourado (Diretor)',
-        phone: '(11) 98765-4321',
-        city: 'São Paulo - SP',
-        role: 'admin'
-      });
-      userMap.set('user-admin-2', {
-        id: 'user-admin-2',
-        email: 'vendas@douradoveiculos.com.br',
-        name: 'Cláudio Vendedor',
-        phone: '(11) 97777-6666',
-        city: 'São Paulo - SP',
-        role: 'admin'
-      });
-
-      try {
-        const allQuotes = await quoteService.getQuotes();
-        allQuotes.forEach(q => {
-          if (q.userId) {
-            userMap.set(q.userId, {
-              id: q.userId,
-              email: q.email || `${q.name.toLowerCase().replace(/\s+/g, '')}@gmail.com`,
-              name: q.name,
-              phone: q.phone,
-              city: q.city,
-              role: 'client'
-            });
-          } else {
-            // Also add anonymous submitters as clients based on email
-            const anonId = 'anon-' + q.email.replace(/[@.]/g, '-');
-            userMap.set(anonId, {
-              id: anonId,
-              email: q.email,
-              name: q.name,
-              phone: q.phone,
-              city: q.city,
-              role: 'client'
-            });
-          }
-        });
-      } catch (err) {
-        console.warn('Error fetching quotes for user list:', err);
-      }
-
-      setUsersList(Array.from(userMap.values()));
-    };
-
-    compileUsers();
-
-    // Load Company Settings
+  useEffect(() => {
     settingsService.getSettings().then(data => {
       setCompanySettings(data);
       setSettingsName(data.companyName);
@@ -203,7 +156,7 @@ export default function AdminPanel({
       setSettingsAddress(data.address);
       setSettingsHours(data.hours);
     });
-  }, [activeSection]);
+  }, []);
 
   const handleSettingsSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,7 +272,6 @@ export default function AdminPanel({
           setMediaGallery(media.gallery && media.gallery.length > 0 ? media.gallery : (carToEdit.images ? carToEdit.images.slice(1) : []));
           setMediaVideoUrl(media.video?.video_url || '');
           setMediaVideoProvider(media.video?.provider || 'youtube');
-          setMedia360(media.frames360 || []);
         })
         .catch((err) => {
           console.warn('Failed to load media for vehicle:', err);
@@ -328,7 +280,6 @@ export default function AdminPanel({
           setMediaGallery(carToEdit.images ? carToEdit.images.slice(1) : []);
           setMediaVideoUrl('');
           setMediaVideoProvider('youtube');
-          setMedia360([]);
         })
         .finally(() => {
           setMediaLoading(false);
@@ -364,7 +315,6 @@ export default function AdminPanel({
       setMediaGallery([]);
       setMediaVideoUrl('');
       setMediaVideoProvider('youtube');
-      setMedia360([]);
     }
   };
 
@@ -598,23 +548,6 @@ export default function AdminPanel({
 
 
           <button
-            onClick={() => setActiveSection('quotes')}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full relative ${
-              activeSection === 'quotes'
-                ? 'bg-red-600 text-white shadow-md'
-                : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
-            }`}
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span>Orçamentos ({quotesList.length})</span>
-            {quotesList.filter(q => q.status === 'Pendente').length > 0 && (
-              <span className="ml-auto bg-amber-500 text-slate-900 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                {quotesList.filter(q => q.status === 'Pendente').length}
-              </span>
-            )}
-          </button>
-
-          <button
             onClick={() => setActiveSection('messages')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full relative ${
               activeSection === 'messages'
@@ -682,7 +615,6 @@ export default function AdminPanel({
             <h2 className="font-extrabold text-3xl text-slate-900 tracking-tight">
               {activeSection === 'dashboard' && 'Visão Geral do Negócio'}
               {activeSection === 'vehicles' && 'Gerenciamento de Inventário'}
-              {activeSection === 'quotes' && 'Solicitações de Orçamento'}
               {activeSection === 'messages' && 'Contatos e Leads Recentes'}
               {activeSection === 'users' && 'Gerenciamento de Usuários'}
               {activeSection === 'settings' && 'Configurações da Concessionária'}
@@ -694,7 +626,6 @@ export default function AdminPanel({
             <p className="text-sm text-slate-500 mt-1">
               {activeSection === 'dashboard' && 'Acompanhe as estatísticas de cliques, contatos e distribuição do seu estoque.'}
               {activeSection === 'vehicles' && 'Adicione novos carros, edite especificações e marque como vendido.'}
-              {activeSection === 'quotes' && 'Revise e controle as solicitações de orçamento recebidas.'}
               {activeSection === 'messages' && 'Revise as solicitações de proposta recebidas do formulário de contato do site.'}
               {activeSection === 'users' && 'Visualize os clientes e administradores registrados na plataforma.'}
               {activeSection === 'settings' && 'Gerencie informações da loja, canais de atendimento e canais sociais.'}
@@ -716,6 +647,14 @@ export default function AdminPanel({
                 <Plus className="w-4 h-4" />
                 <span>Cadastrar Carro</span>
               </motion.button>
+            )}
+            {activeSection === 'users' && (
+              <button
+                onClick={() => { setNewAdminError(''); setCreatingAdmin(true); }}
+                className="flex items-center gap-2 rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-red-700"
+              >
+                <Plus className="h-4 w-4" /> Adicionar administrador
+              </button>
             )}
           </div>
         </header>
@@ -967,7 +906,7 @@ export default function AdminPanel({
                                   if (confirm('Deseja excluir também o projeto de visualização 360° (imagens e marcadores) associado a este veículo?')) {
                                     try {
                                       const { vehicle360Service } = await import('../services/vehicle360.service');
-                                      await vehicle360Service.deleteProject(car.id);
+                                      await vehicle360Service.deleteProjectsByVehicle(car.id);
                                     } catch (err) {
                                       console.warn('Error deleting 360 project during vehicle deletion:', err);
                                     }
@@ -1461,6 +1400,44 @@ export default function AdminPanel({
 
       {/* 4. MODAL: CREATE / EDIT VEHICLE DIALOG */}
       <AnimatePresence>
+        {creatingAdmin && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <motion.form
+              initial={{ opacity: 0, scale: .96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: .96 }}
+              onSubmit={async (event) => {
+                event.preventDefault();
+                setNewAdminBusy(true);
+                setNewAdminError('');
+                try {
+                  const user = await adminUsersService.createAdmin({ name: newAdminName, email: newAdminEmail, phone: newAdminPhone, password: newAdminPassword });
+                  setUsersList(current => [user, ...current.filter(item => item.id !== user.id)]);
+                  setCreatingAdmin(false);
+                  setNewAdminName(''); setNewAdminEmail(''); setNewAdminPhone(''); setNewAdminPassword('');
+                } catch (error) {
+                  setNewAdminError(error instanceof Error ? error.message : 'Não foi possível criar o administrador.');
+                } finally {
+                  setNewAdminBusy(false);
+                }
+              }}
+              className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between bg-slate-950 px-6 py-5 text-white">
+                <div><h3 className="text-lg font-extrabold">Novo administrador</h3><p className="mt-1 text-xs text-slate-400">A conta terá acesso ao painel administrativo.</p></div>
+                <button type="button" onClick={() => setCreatingAdmin(false)} aria-label="Fechar" className="rounded-full p-2 hover:bg-white/10"><X className="h-5 w-5" /></button>
+              </div>
+              <div className="space-y-4 p-6">
+                {newAdminError && <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">{newAdminError}</div>}
+                <label className="block text-sm font-bold text-slate-700">Nome<input required minLength={2} value={newAdminName} onChange={e => setNewAdminName(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 font-normal outline-none focus:border-red-500" /></label>
+                <label className="block text-sm font-bold text-slate-700">E-mail<input required type="email" value={newAdminEmail} onChange={e => setNewAdminEmail(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 font-normal outline-none focus:border-red-500" /></label>
+                <label className="block text-sm font-bold text-slate-700">WhatsApp (opcional)<input inputMode="tel" value={newAdminPhone} onChange={e => setNewAdminPhone(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 font-normal outline-none focus:border-red-500" /></label>
+                <label className="block text-sm font-bold text-slate-700">Senha provisória<input required minLength={8} type="password" value={newAdminPassword} onChange={e => setNewAdminPassword(e.target.value)} className="mt-2 min-h-12 w-full rounded-xl border border-slate-300 px-4 font-normal outline-none focus:border-red-500" /><span className="mt-1 block text-xs font-normal text-slate-400">Use pelo menos 8 caracteres e envie a senha diretamente ao funcionário.</span></label>
+              </div>
+              <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50 p-5"><button type="button" onClick={() => setCreatingAdmin(false)} className="rounded-xl px-5 py-2.5 text-sm font-bold text-slate-600">Cancelar</button><button disabled={newAdminBusy} className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50">{newAdminBusy ? 'Criando...' : 'Criar administrador'}</button></div>
+            </motion.form>
+          </div>
+        )}
         {isModalOpen && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 overflow-y-auto">
             <motion.div
@@ -2248,92 +2225,6 @@ export default function AdminPanel({
                                 </div>
                               )}
                             </div>
-                          )}
-                        </div>
-
-                        {/* 4. VISUALIZAÇÃO 360° */}
-                        <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-4">
-                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <div>
-                              <h4 className="text-sm font-extrabold text-slate-800 uppercase tracking-wider">4. Visualização Interativa 360°</h4>
-                              <p className="text-[11px] text-slate-400 mt-0.5">Adicione a sequência ordenada de imagens (ex: 36 fotos sequenciais).</p>
-                            </div>
-                            <span className="text-[10px] bg-red-50 text-red-600 font-bold px-2.5 py-1 rounded-lg">
-                              {media360.length} Frames
-                            </span>
-                          </div>
-
-                          <div className="border-2 border-dashed border-slate-200 hover:border-red-500 rounded-2xl p-6 flex flex-col items-center justify-center bg-slate-50 transition-colors cursor-pointer">
-                            <Upload className="w-8 h-8 text-slate-400 mb-2" />
-                            <p className="text-sm font-bold text-slate-700">Upload Múltiplo de Imagens 360°</p>
-                            <p className="text-[10px] text-slate-400 mt-1">Envie arquivos ordenados como: 001.webp, 002.webp, 003.webp...</p>
-                            <input 
-                              type="file" 
-                              multiple 
-                              accept="image/*" 
-                              className="hidden" 
-                              id="360-upload-input"
-                              onChange={async (e) => {
-                                const files = Array.from(e.target.files || []) as File[];
-                                if (files.length > 0) {
-                                  const activeId = editingCar ? editingCar.id : newCarId;
-                                  setMediaLoading(true);
-                                  files.sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
-                                  const uploadedUrls: string[] = [];
-                                  for (const file of files) {
-                                    try {
-                                      const url = await vehicleMediaService.uploadFile(activeId, file, '360');
-                                      uploadedUrls.push(url);
-                                    } catch (err) {
-                                      console.error(err);
-                                    }
-                                  }
-                                  const updated = [...media360, ...uploadedUrls];
-                                  setMedia360(updated);
-                                  await vehicleMediaService.save360Frames(activeId, updated);
-                                }
-                                setMediaLoading(false);
-                              }}
-                            />
-                            <label htmlFor="360-upload-input" className="mt-3 px-4 py-1.5 bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer">
-                              Enviar Frames do 360°
-                            </label>
-                          </div>
-
-                          {media360.length > 0 ? (
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                <span className="text-xs font-bold text-slate-700">Sequência do 360° Ativa</span>
-                                <button
-                                  type="button"
-                                  onClick={async () => {
-                                    if (confirm('Deseja realmente limpar toda a sequência 360° deste veículo?')) {
-                                      const activeId = editingCar ? editingCar.id : newCarId;
-                                      setMedia360([]);
-                                      await vehicleMediaService.save360Frames(activeId, []);
-                                    }
-                                  }}
-                                  className="text-xs text-red-600 hover:text-red-700 font-bold cursor-pointer"
-                                >
-                                  Limpar Sequência
-                                </button>
-                              </div>
-
-                              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-                                {media360.map((url, idx) => (
-                                  <div key={idx} className="relative w-16 aspect-video rounded-lg overflow-hidden border border-slate-200 shrink-0">
-                                    <img src={url} alt={`Frame ${idx}`} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                                    <div className="absolute bottom-0 inset-x-0 bg-black/70 text-[8px] font-black text-white text-center py-0.5">
-                                      #{idx + 1}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            <p className="text-xs text-slate-400 italic text-center py-4 bg-slate-50 border border-slate-100 rounded-xl">
-                              Nenhum frame 360° enviado ainda para este veículo.
-                            </p>
                           )}
                         </div>
 

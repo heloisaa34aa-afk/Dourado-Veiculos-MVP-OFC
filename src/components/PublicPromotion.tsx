@@ -13,7 +13,7 @@ function BannerPicture({ banner, className }: { banner: SiteBanner; className: s
   return (
     <picture>
       {banner.mobile_image_url && <source media="(max-width: 640px)" srcSet={banner.mobile_image_url} />}
-      <img src={desktop} alt={banner.title || banner.name} className={className} loading={banner.placement === 'popup' ? 'eager' : 'lazy'} decoding="async" />
+      <img src={desktop} alt={banner.title || banner.name} className={className} loading={banner.placement === 'home_inline' ? 'lazy' : 'eager'} fetchPriority={banner.placement === 'home_inline' ? 'auto' : 'high'} decoding="async" />
     </picture>
   );
 }
