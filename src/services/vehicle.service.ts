@@ -299,8 +299,22 @@ export const vehicleService = {
       body: { action: 'delete', vehicleId: id },
     });
 
-    if (error || data?.error) {
-      throw new Error(data?.error || error?.message || `Não foi possível excluir o veículo ${id}.`);
+    if (error) {
+      let message = error.message || `Não foi possível excluir o veículo ${id}.`;
+      const response = (error as any).context;
+      if (response?.clone) {
+        try {
+          const payload = await response.clone().json();
+          message = payload?.error || message;
+        } catch {
+          // Preserve the SDK error when the function did not return JSON.
+        }
+      }
+      throw new Error(message);
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
     }
   },
 

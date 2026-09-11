@@ -47,7 +47,13 @@ Deno.serve(async (request) => {
       .select('id')
       .eq('id', authData.user.id)
       .maybeSingle();
-    if (permissionError || !permission) return json({ error: 'Sua conta não tem permissão para excluir veículos.' }, 403);
+    if (permissionError) {
+      console.error('[admin-vehicles] admin lookup failed', permissionError);
+      return json({
+        error: `Não foi possível validar a conta administrativa (${permissionError.code || 'erro de permissão'}).`,
+      }, 500);
+    }
+    if (!permission) return json({ error: 'Sua conta não tem permissão para excluir veículos.' }, 403);
 
     const body = await request.json();
     const vehicleId = String(body.vehicleId || '');
@@ -60,7 +66,12 @@ Deno.serve(async (request) => {
       admin.from('vehicle_360_capture_sessions').select('id').eq('vehicle_id', vehicleId),
     ]);
     // Capture sessions may not exist in installations that have not enabled QR capture yet.
-    if (projectsError) throw projectsError;
+    if (projectsError) {
+      console.error('[admin-vehicles] projects lookup failed', projectsError);
+      return json({
+        error: `Não foi possível consultar os projetos 360 (${projectsError.code || 'erro de banco'}).`,
+      }, 500);
+    }
     if (sessionsError && sessionsError.code !== '42P01') console.warn('[admin-vehicles] capture sessions lookup', sessionsError);
 
     const { data: removed, error: deleteError } = await admin
@@ -69,7 +80,12 @@ Deno.serve(async (request) => {
       .eq('id', vehicleId)
       .select('id')
       .maybeSingle();
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error('[admin-vehicles] vehicle delete failed', deleteError);
+      return json({
+        error: `O banco recusou a exclusão do veículo (${deleteError.code || 'erro de banco'}): ${deleteError.message}`,
+      }, 500);
+    }
     if (!removed) return json({ error: 'Veículo não encontrado ou já excluído.' }, 404);
 
     const cleanup = [
