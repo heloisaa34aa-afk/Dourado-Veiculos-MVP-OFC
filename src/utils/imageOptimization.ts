@@ -55,17 +55,33 @@ export async function optimizeBannerImage(file: File, size: BannerImageSize) {
 }
 
 export async function optimizeVehicle360Frame(file: File) {
-  if (file.type === 'image/webp' && file.size <= 900_000) return file;
+  if (file.type === 'image/webp' && file.size <= 550_000) return file;
   const loaded = await loadImage(file);
   try {
-    const size = calculateContainSize(loaded.width, loaded.height, 1600, 1200);
+    const size = calculateContainSize(loaded.width, loaded.height, 1400, 1050);
     const canvas = document.createElement('canvas');
     canvas.width = size.width;
     canvas.height = size.height;
     const context = canvas.getContext('2d');
     if (!context) throw new Error('O navegador não disponibilizou o processamento de imagem.');
     context.drawImage(loaded.source, 0, 0, size.width, size.height);
-    const blob = await canvasBlob(canvas, 'image/webp', 0.78);
+    const blob = await canvasBlob(canvas, 'image/webp', 0.72);
     return new File([blob], `${file.name.replace(/\.[^.]+$/, '') || 'frame'}.webp`, { type: 'image/webp' });
+  } finally { loaded.close(); }
+}
+
+export async function optimizeVehicleMediaImage(file: File) {
+  if (file.type === 'image/webp' && file.size <= 750_000) return file;
+  const loaded = await loadImage(file);
+  try {
+    const size = calculateContainSize(loaded.width, loaded.height, 1800, 1350);
+    const canvas = document.createElement('canvas');
+    canvas.width = size.width;
+    canvas.height = size.height;
+    const context = canvas.getContext('2d');
+    if (!context) throw new Error('O navegador não disponibilizou o processamento de imagem.');
+    context.drawImage(loaded.source, 0, 0, size.width, size.height);
+    const blob = await canvasBlob(canvas, 'image/webp', 0.82);
+    return new File([blob], `${file.name.replace(/\.[^.]+$/, '') || 'veiculo'}.webp`, { type: 'image/webp' });
   } finally { loaded.close(); }
 }

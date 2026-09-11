@@ -22,9 +22,6 @@ interface ShowroomHomeProps {
 function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onInteractiveChange: (active: boolean) => void }) {
   const [mode, setMode] = useState<'photos' | '360'>('photos');
   const [photoIndex, setPhotoIndex] = useState(0);
-  const viewer = useVehicle360(car.id, 'public', 'exterior');
-  const frames = viewer.project?.frames || [];
-  const has360 = viewer.project?.status === 'completed' && frames.length > 0;
   const images = car.images.length ? car.images : ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1200'];
 
   useEffect(() => {
@@ -46,28 +43,52 @@ function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onIntera
 
   return <div className="overflow-hidden rounded-[28px] border border-white/15 bg-black/45 shadow-[0_30px_90px_rgba(0,0,0,.45)] backdrop-blur">
     <div className="relative aspect-[4/3] overflow-hidden bg-[#080a0e] sm:aspect-video">
-      {mode === '360' && has360 ? <>
-        <img
-          src={frames[viewer.currentFrame]?.imageUrl || frames[0].imageUrl}
-          alt={`Visão 360° do ${car.brand} ${car.model}`}
-          draggable={false}
-          onPointerDown={viewer.handlePointerDown}
-          onPointerMove={viewer.handlePointerMove}
-          onPointerUp={viewer.handlePointerUp}
-          onPointerCancel={viewer.handlePointerUp}
-          onPointerLeave={viewer.handlePointerUp}
-          className="h-full w-full touch-none cursor-ew-resize object-contain"
-        />
-        <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-2 text-xs font-bold text-white backdrop-blur">Arraste para girar · {viewer.currentFrame + 1}/{frames.length}</div>
-      </> : <img key={`${car.id}-${photoIndex}`} src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" />}
+      {mode === '360'
+        ? <Featured360Player car={car} onUnavailable={() => chooseMode('photos')} />
+        : <img key={`${car.id}-${photoIndex}`} src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />}
 
       <div className="absolute right-3 top-3 flex rounded-full border border-white/15 bg-black/65 p-1 text-white backdrop-blur">
         <button onClick={() => chooseMode('photos')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === 'photos' ? 'bg-white text-slate-950' : ''}`}><Images className="h-4 w-4" /> Fotos</button>
-        {has360 && <button onClick={() => chooseMode('360')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === '360' ? 'bg-red-600 text-white' : ''}`}><RotateCcw className="h-4 w-4" /> 360°</button>}
+        <button onClick={() => chooseMode('360')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === '360' ? 'bg-red-600 text-white' : ''}`}><RotateCcw className="h-4 w-4" /> 360°</button>
       </div>
       {mode === 'photos' && images.length > 1 && <div className="absolute bottom-3 right-3 flex gap-1.5">{images.slice(0, 8).map((_, index) => <button key={index} onClick={() => setPhotoIndex(index)} aria-label={`Ver foto ${index + 1}`} className={`h-1.5 rounded-full ${index === photoIndex % images.length ? 'w-7 bg-red-500' : 'w-1.5 bg-white/60'}`} />)}</div>}
     </div>
   </div>;
+}
+
+function Featured360Player({ car, onUnavailable }: { car: Car; onUnavailable: () => void }) {
+  const viewer = useVehicle360(car.id, 'public', 'exterior');
+  const frames = viewer.project?.frames || [];
+
+  useEffect(() => {
+    if (!viewer.loading && frames.length === 0) {
+      const timer = window.setTimeout(onUnavailable, 1200);
+      return () => window.clearTimeout(timer);
+    }
+  }, [frames.length, onUnavailable, viewer.loading]);
+
+  if (viewer.loading) {
+    return <div className="flex h-full items-center justify-center text-sm font-bold text-white">Carregando visualização...</div>;
+  }
+  if (!frames.length) {
+    return <div className="flex h-full items-center justify-center text-sm font-bold text-white">Este veículo ainda não possui visão 360°.</div>;
+  }
+
+  return <>
+    <img
+      src={frames[viewer.currentFrame]?.imageUrl || frames[0].imageUrl}
+      alt={`Visão 360° do ${car.brand} ${car.model}`}
+      draggable={false}
+      onPointerDown={viewer.handlePointerDown}
+      onPointerMove={viewer.handlePointerMove}
+      onPointerUp={viewer.handlePointerUp}
+      onPointerCancel={viewer.handlePointerUp}
+      onPointerLeave={viewer.handlePointerUp}
+      className="h-full w-full touch-none cursor-ew-resize object-contain"
+      decoding="async"
+    />
+    <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-2 text-xs font-bold text-white backdrop-blur">Arraste para girar · {viewer.currentFrame + 1}/{frames.length}</div>
+  </>;
 }
 
 export default function ShowroomHome({ cars, loading, carsError, banners, onSelectCar, onSubmitLead }: ShowroomHomeProps) {

@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { optimizeVehicleMediaImage } from '../utils/imageOptimization';
 
 export interface VehicleImage {
   id: string;
@@ -220,8 +221,11 @@ export const vehicleMediaService = {
    * Upload media file to Supabase storage bucket
    */
   async uploadFile(vehicleId: string, file: File, folder: 'cover' | 'gallery' | '360' | 'videos', onProgress?: (pct: number) => void): Promise<string> {
-    const fileExt = file.name.split('.').pop() || 'webp';
-    const cleanName = file.name.replace(/[^a-zA-Z0-9]/g, '_');
+    const uploadFile = folder === 'cover' || folder === 'gallery'
+      ? await optimizeVehicleMediaImage(file)
+      : file;
+    const fileExt = uploadFile.name.split('.').pop() || 'webp';
+    const cleanName = uploadFile.name.replace(/\.[^.]+$/, '').replace(/[^a-zA-Z0-9]/g, '_');
     const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}_${cleanName}.${fileExt}`;
     const filePath = `${vehicleId}/${folder}/${fileName}`;
 
@@ -229,8 +233,9 @@ export const vehicleMediaService = {
 
     const { data, error } = await supabase.storage
       .from('vehicles')
-      .upload(filePath, file, {
-        cacheControl: '3600',
+      .upload(filePath, uploadFile, {
+        cacheControl: '31536000',
+        contentType: uploadFile.type || undefined,
         upsert: true
       });
 

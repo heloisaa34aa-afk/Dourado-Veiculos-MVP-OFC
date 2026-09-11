@@ -1,4 +1,3 @@
-import { useVehicle360 } from '../hooks/useVehicle360';
 /**
  * @license
  * SPDX-License-Identifier: Apache-2.0
@@ -35,8 +34,6 @@ interface CarDetailsProps {
 
 
 export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: CarDetailsProps) {
-  const exterior360 = useVehicle360(car.id, 'public', 'exterior');
-  const interior360 = useVehicle360(car.id, 'public', 'interior');
   type VehicleMediaItem = 
     | { id: 'vehicle-360'; type: '360'; thumbnail: string }
     | { id: string; type: 'image'; url: string; thumbnail: string; imageIndex: number };
@@ -44,18 +41,19 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
   const [selectedMediaId, setSelectedMediaId] = useState<string | null>(null);
   const [userManuallySelected, setUserManuallySelected] = useState(false);
   const [active360ViewType, setActive360ViewType] = useState<'exterior' | 'interior'>('exterior');
+  const [available360Views, setAvailable360Views] = useState<Array<'exterior' | 'interior'>>([]);
+  const [loading360, setLoading360] = useState(true);
 
-  const hasExterior = exterior360.project?.status === 'completed' && exterior360.totalFrames > 0;
-  const hasInterior = interior360.project?.status === 'completed' && interior360.totalFrames > 0;
+  const hasExterior = available360Views.includes('exterior');
+  const hasInterior = available360Views.includes('interior');
   const has360 = hasExterior || hasInterior;
-  const loading360 = exterior360.loading || interior360.loading;
 
   const galleryItems: VehicleMediaItem[] = [];
   if (has360) {
     galleryItems.push({
       id: 'vehicle-360',
       type: '360',
-      thumbnail: hasExterior ? exterior360.project!.frames![0].imageUrl : interior360.project!.frames![0].imageUrl
+      thumbnail: car.images[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'
     });
   }
   car.images.forEach((url, idx) => {
@@ -73,6 +71,16 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
     || (resolvingPrimaryMedia ? undefined : galleryItems[0]);
 
   // Auto select logic
+  useEffect(() => {
+    let active = true;
+    setLoading360(true);
+    vehicle360Service.getPublishedViewTypes(car.id)
+      .then(views => { if (active) setAvailable360Views(views); })
+      .catch(error => { console.warn('[360] Não foi possível consultar as visualizações:', error); if (active) setAvailable360Views([]); })
+      .finally(() => { if (active) setLoading360(false); });
+    return () => { active = false; };
+  }, [car.id]);
+
   useEffect(() => {
     if (!userManuallySelected) {
       if (has360) {

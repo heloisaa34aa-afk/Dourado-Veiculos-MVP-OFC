@@ -10,7 +10,6 @@ import {
   HelpCircle, Sparkles, Star, DollarSign, Calculator, RotateCcw,
   CheckCircle, ArrowRight, Car as CarIcon, Gauge, Calendar, Fuel
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
 import { Car, LeadMessage, CarCategory, UserProfile } from './types';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -34,8 +33,9 @@ import { useCategories } from './hooks/useCategories';
 import { vehicleService } from './services/vehicle.service';
 import { authService } from './services/auth.service';
 import { usePublicBanners } from './hooks/usePublicBanners';
-import { SalesAssistantChat } from './components/SalesAssistantChat';
 import type { SiteBanner } from './services/banner.service';
+
+const SalesAssistantChat = lazy(() => import('./components/SalesAssistantChat').then(module => ({ default: module.SalesAssistantChat })));
 
 export default function App() {
   // Navigation states
@@ -60,11 +60,17 @@ export default function App() {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { banners: publicBanners, loading: bannersLoading } = usePublicBanners();
+  const [nonCriticalUiReady, setNonCriticalUiReady] = useState(false);
+  const { banners: publicBanners } = usePublicBanners();
   const showPromotions = !location.pathname.startsWith('/admin')
     && !location.pathname.startsWith('/cliente')
     && !location.pathname.startsWith('/captura-360');
   const isMobileCaptureRoute = /^\/captura-360(?:\/|$)/.test(location.pathname);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setNonCriticalUiReady(true), 1800);
+    return () => window.clearTimeout(timer);
+  }, []);
   
   const handleLogin = (profile: UserProfile) => {
     setUserProfile(profile);
@@ -164,9 +170,9 @@ export default function App() {
     addLead, 
     updateLeadStatus, 
     deleteLead 
-  } = useLeads();
+  } = useLeads(location.pathname.startsWith('/admin'));
 
-  const { categories: dbCategories } = useCategories();
+  const { categories: dbCategories } = useCategories(location.pathname === '/modelo-anterior');
 
   // Public Catalog Filter parameters
   const [searchQuery, setSearchQuery] = useState('');
@@ -353,14 +359,16 @@ export default function App() {
           onLogout={handleLogout}
         />
       )}
-      {showPromotions && <PublicPromotion banners={publicBanners} placement="popup" />}
+          {showPromotions && nonCriticalUiReady && (
+            <PublicPromotion banners={publicBanners} placement="popup" />
+          )}
       <div className="flex-1 flex flex-col">
         <Routes>
           <Route path="/" element={
             <Suspense fallback={<RouteLoading label="Preparando o showroom..." dark />}>
               <ShowroomHome
                 cars={cars}
-                loading={carsLoading || bannersLoading}
+                loading={carsLoading}
                 carsError={carsError}
                 banners={publicBanners}
                 onSelectCar={handleSelectCarDetails}
@@ -384,12 +392,8 @@ export default function App() {
                         if (!isActive) return null;
 
                         return (
-                          <motion.div
+                          <div
                             key={car.id}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.5 }}
                             className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center"
                           >
                             <div className="lg:col-span-6 space-y-6 text-center lg:text-left">
@@ -446,7 +450,7 @@ export default function App() {
                                 </div>
                               </div>
                             </div>
-                          </motion.div>
+                          </div>
                         );
                       })}
 
@@ -826,7 +830,11 @@ export default function App() {
         </Routes>
       </div>
       {!isMobileCaptureRoute && <Footer onAdminClick={() => navigate('/admin')} />}
-      {showSalesChat && <SalesAssistantChat vehicle={chatVehicle} />}
+      {showSalesChat && nonCriticalUiReady && (
+        <Suspense fallback={null}>
+          <SalesAssistantChat vehicle={chatVehicle} />
+        </Suspense>
+      )}
     </div>
   );
 }

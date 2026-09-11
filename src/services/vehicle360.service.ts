@@ -20,19 +20,26 @@ export function normalizeMarkerPosition(position: any) {
 }
 
 export const vehicle360Service = {
+  async getPublishedViewTypes(vehicleId: string): Promise<Array<'exterior' | 'interior'>> {
+    const { data, error } = await supabase
+      .from('vehicle_360_projects')
+      .select('view_type')
+      .eq('vehicle_id', vehicleId)
+      .eq('status', 'completed')
+      .gt('frame_count', 0);
+    if (error) throw error;
+    return (data || [])
+      .map(row => row.view_type)
+      .filter((type): type is 'exterior' | 'interior' => type === 'exterior' || type === 'interior');
+  },
+
   // Public Viewer
   async getPublishedProjectByVehicleId(vehicleId: string, viewType: 'exterior' | 'interior' = 'exterior'): Promise<Vehicle360Project | null> {
     const { data: project, error } = await supabase
       .from('vehicle_360_projects')
       .select(`
         *,
-        frames:vehicle_360_frames(*),
-        hotspots:vehicle_360_hotspots(*, positions:vehicle_360_hotspot_positions(*)),
-        damage_markers:vehicle_360_damage_markers(
-          *,
-          images:vehicle_360_damage_images(*),
-          positions:vehicle_360_damage_marker_positions(*)
-        )
+        frames:vehicle_360_frames(*)
       `)
       .eq('vehicle_id', vehicleId)
       .eq('view_type', viewType)
@@ -69,7 +76,31 @@ export const vehicle360Service = {
         createdAt: f.created_at,
         updatedAt: f.updated_at,
       })) || [],
-      hotspots: project.hotspots?.map((h: any) => ({
+      hotspots: [],
+      damageMarkers: []
+    } as any;
+  },
+
+  async getPublishedProjectMarkers(projectId: string): Promise<{
+    hotspots: Vehicle360Hotspot[];
+    damageMarkers: Vehicle360DamageMarker[];
+  }> {
+    const [hotspotResponse, damageResponse] = await Promise.all([
+      supabase
+        .from('vehicle_360_hotspots')
+        .select('*, positions:vehicle_360_hotspot_positions(*)')
+        .eq('project_id', projectId)
+        .eq('active', true),
+      supabase
+        .from('vehicle_360_damage_markers')
+        .select('*, images:vehicle_360_damage_images(*), positions:vehicle_360_damage_marker_positions(*)')
+        .eq('project_id', projectId),
+    ]);
+    if (hotspotResponse.error) throw hotspotResponse.error;
+    if (damageResponse.error) throw damageResponse.error;
+
+    return {
+      hotspots: (hotspotResponse.data || []).map((h: any) => ({
         id: h.id,
         projectId: h.project_id,
         title: h.title,
@@ -82,16 +113,16 @@ export const vehicle360Service = {
         active: h.active,
         createdAt: h.created_at,
         updatedAt: h.updated_at,
-        positions: h.positions?.map((p: any) => ({
+        positions: (h.positions || []).map((p: any) => ({
           id: p.id,
           frameNumber: p.frame_number,
           posX: p.pos_x,
           posY: p.pos_y,
           visible: p.visible,
           isKeyframe: p.is_keyframe,
-        })) || []
-      })) || [],
-      damageMarkers: project.damage_markers?.map((d: any) => ({
+        })),
+      })),
+      damageMarkers: (damageResponse.data || []).map((d: any) => ({
         id: d.id,
         projectId: d.project_id,
         title: d.title,
@@ -102,24 +133,24 @@ export const vehicle360Service = {
         posY: d.pos_y,
         createdAt: d.created_at,
         updatedAt: d.updated_at,
-        images: d.images?.map((i: any) => ({
+        images: (d.images || []).map((i: any) => ({
           id: i.id,
           markerId: i.marker_id,
           imageUrl: i.image_url,
           storagePath: i.storage_path,
           orderIndex: i.order_index,
           createdAt: i.created_at,
-        })) || [],
-        positions: d.positions?.map((p: any) => ({
+        })),
+        positions: (d.positions || []).map((p: any) => ({
           id: p.id,
           frameNumber: p.frame_number,
           posX: p.pos_x,
           posY: p.pos_y,
           visible: p.visible,
           isKeyframe: p.is_keyframe,
-        })) || []
-      })) || []
-    } as any;
+        })),
+      })),
+    };
   },
 
   // Admin

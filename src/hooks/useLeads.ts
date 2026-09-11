@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { leadService } from '../services/lead.service';
 import { LeadMessage } from '../types';
 
-export function useLeads() {
+export function useLeads(enabled = true) {
   const [leads, setLeads] = useState<LeadMessage[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +22,9 @@ export function useLeads() {
   }, []);
 
   useEffect(() => {
-    fetchLeads();
-  }, [fetchLeads]);
+    if (enabled) fetchLeads();
+    else setLoading(false);
+  }, [enabled, fetchLeads]);
 
   const addLead = async (lead: Omit<LeadMessage, 'id' | 'createdAt' | 'status'>) => {
     const newLead = await leadService.createLead(lead);

@@ -39,13 +39,14 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
   useEffect(() => {
     setRenderedFrame(0);
     setFrameReady(Boolean(frameUrls[0] && isImageDecoded(frameUrls[0])));
-    if (frameUrls.length) void preloadFrameSequence(frameUrls, 0);
+    if (frameUrls.length) void preloadFrameSequence(frameUrls, 0, 3);
   }, [frameUrls]);
 
   useEffect(() => {
     const url = frameUrls[currentFrame];
     if (!url) return;
     requestedFrameRef.current = currentFrame;
+    void preloadFrameSequence(frameUrls, currentFrame, 3);
     if (isImageDecoded(url)) {
       setRenderedFrame(currentFrame);
       setFrameReady(true);

@@ -31,31 +31,15 @@ export function preloadImage(url: string, priority: 'high' | 'low' | 'auto' = 'a
   return request;
 }
 
-export async function preloadFrameSequence(urls: string[], firstIndex = 0) {
+export async function preloadFrameSequence(urls: string[], centerIndex = 0, radius = 3) {
   if (!urls.length) return;
-  const order: number[] = [firstIndex];
-  for (let distance = 1; distance < urls.length; distance += 1) {
-    order.push((firstIndex + distance) % urls.length, (firstIndex - distance + urls.length) % urls.length);
+  const indexes = [centerIndex];
+  for (let distance = 1; distance <= Math.min(radius, urls.length - 1); distance += 1) {
+    indexes.push(
+      (centerIndex + distance) % urls.length,
+      (centerIndex - distance + urls.length) % urls.length,
+    );
   }
-  const uniqueOrder = order.filter((index, position, list) => list.indexOf(index) === position);
-
-  await Promise.all(uniqueOrder.slice(0, 5).map(index => preloadImage(urls[index], 'high').catch(() => undefined)));
-
-  const loadRemaining = () => {
-    let cursor = 5;
-    const next = () => {
-      if (cursor >= uniqueOrder.length) return;
-      const batch = uniqueOrder.slice(cursor, cursor + 3);
-      cursor += batch.length;
-      void Promise.all(batch.map(index => preloadImage(urls[index], 'low').catch(() => undefined)))
-        .finally(() => window.setTimeout(next, 16));
-    };
-    next();
-  };
-
-  if ('requestIdleCallback' in window) {
-    (window as Window & { requestIdleCallback: (callback: () => void) => number }).requestIdleCallback(loadRemaining);
-  } else {
-    globalThis.setTimeout(loadRemaining, 50);
-  }
+  const uniqueIndexes = indexes.filter((index, position, list) => list.indexOf(index) === position);
+  await Promise.all(uniqueIndexes.map((index, order) => preloadImage(urls[index], order < 3 ? 'high' : 'low').catch(() => undefined)));
 }

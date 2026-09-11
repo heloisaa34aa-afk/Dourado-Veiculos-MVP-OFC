@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { categoryService, Category } from '../services/category.service';
 
-export function useCategories() {
+export function useCategories(enabled = true) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +21,9 @@ export function useCategories() {
   }, []);
 
   useEffect(() => {
-    fetchCategories();
-  }, [fetchCategories]);
+    if (enabled) fetchCategories();
+    else setLoading(false);
+  }, [enabled, fetchCategories]);
 
   return {
     categories,

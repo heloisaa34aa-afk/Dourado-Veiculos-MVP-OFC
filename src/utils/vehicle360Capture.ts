@@ -1,4 +1,4 @@
-export const MAX_CAPTURE_DIMENSION = 2560;
+export const MAX_CAPTURE_DIMENSION = 1600;
 export const MAX_CAPTURE_FILE_SIZE = 5 * 1024 * 1024;
 
 export interface CaptureFrameLike {
@@ -128,7 +128,7 @@ export async function processVehicleCaptureImage(file: File) {
       canvas.toBlob(
         result => result ? resolve(result) : reject(new Error('Não foi possível gerar a imagem JPEG.')),
         'image/jpeg',
-        0.88,
+        0.8,
       );
     });
 

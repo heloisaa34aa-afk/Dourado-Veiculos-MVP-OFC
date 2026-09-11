@@ -69,6 +69,16 @@ export function useVehicle360(vehicleId: string, mode: 'public' | 'admin' = 'pub
         }
       }
       setProject(data);
+      if (mode === 'public' && data) {
+        const markerRequest = vehicle360Service.getPublishedProjectMarkers?.(data.id);
+        if (markerRequest) {
+          void markerRequest
+            .then(markers => {
+              setProject(current => current?.id === data.id ? { ...current, ...markers } : current);
+            })
+            .catch(markerError => console.warn('[360] Marcadores serão carregados posteriormente:', markerError));
+        }
+      }
     } catch (err: any) {
       setError(err);
     } finally {

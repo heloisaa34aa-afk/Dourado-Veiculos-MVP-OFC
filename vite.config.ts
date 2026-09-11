@@ -18,6 +18,18 @@ export default defineConfig(() => {
       environment: 'jsdom',
       globals: true,
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'react-core': ['react', 'react-dom', 'react-router-dom'],
+            'supabase-core': ['@supabase/supabase-js'],
+            'ui-icons': ['lucide-react'],
+            'ui-motion': ['motion'],
+          },
+        },
+      },
+    },
     server: {
       hmr: process.env.DISABLE_HMR !== 'true',
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
