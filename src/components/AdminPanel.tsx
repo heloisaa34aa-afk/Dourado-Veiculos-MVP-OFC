@@ -33,7 +33,7 @@ interface AdminPanelProps {
   messages: LeadMessage[];
   onAddCar: (car: CarType) => void;
   onEditCar: (car: CarType) => void;
-  onDeleteCar: (id: string) => void;
+  onDeleteCar: (id: string) => Promise<void>;
   onUpdateMessageStatus: (id: string, status: LeadMessage['status']) => void;
   onDeleteMessage: (id: string) => void;
 }
@@ -84,6 +84,7 @@ export default function AdminPanel({
   const [mediaVideoUrl, setMediaVideoUrl] = useState('');
   const [mediaVideoProvider, setMediaVideoProvider] = useState<'upload' | 'youtube'>('youtube');
   const [mediaLoading, setMediaLoading] = useState(false);
+  const [deletingVehicleId, setDeletingVehicleId] = useState<string | null>(null);
 
   // Helper UUID generator for draft/new cars
   const generateUUID = () => {
@@ -197,6 +198,20 @@ export default function AdminPanel({
       setQuotesList(prev => prev.filter(q => q.id !== quoteId));
     } catch (err) {
       console.error('Error deleting quote:', err);
+    }
+  };
+
+  const handleDeleteVehicle = async (car: CarType) => {
+    if (!confirm(`Excluir definitivamente ${car.brand} ${car.model}? As fotos, vídeos e projetos 360° vinculados também serão removidos.`)) return;
+
+    setDeletingVehicleId(car.id);
+    try {
+      await onDeleteCar(car.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível excluir o veículo.';
+      alert(`Não foi possível excluir o veículo.\n\n${message}`);
+    } finally {
+      setDeletingVehicleId(null);
     }
   };
 
@@ -901,23 +916,12 @@ export default function AdminPanel({
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button
-                              onClick={async () => {
-                                if (confirm(`Tem certeza que deseja remover o veículo ${car.brand} ${car.model}?`)) {
-                                  if (confirm('Deseja excluir também o projeto de visualização 360° (imagens e marcadores) associado a este veículo?')) {
-                                    try {
-                                      const { vehicle360Service } = await import('../services/vehicle360.service');
-                                      await vehicle360Service.deleteProjectsByVehicle(car.id);
-                                    } catch (err) {
-                                      console.warn('Error deleting 360 project during vehicle deletion:', err);
-                                    }
-                                  }
-                                  onDeleteCar(car.id);
-                                }
-                              }}
-                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors cursor-pointer"
-                              title="Excluir veículo"
+                              onClick={() => handleDeleteVehicle(car)}
+                              disabled={deletingVehicleId !== null}
+                              className="p-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl transition-colors cursor-pointer disabled:cursor-wait disabled:opacity-50"
+                              title={deletingVehicleId === car.id ? 'Excluindo veículo...' : 'Excluir veículo'}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              {deletingVehicleId === car.id ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
                           </div>
                         </td>
@@ -1377,7 +1381,7 @@ export default function AdminPanel({
         {/* 3.4. SECTION: VEHICLE 360° */}
         {activeSection === 'vehicle360' && (
           <ErrorBoundary onBackToDashboard={() => setActiveSection('dashboard')}>
-            <Admin360Module cars={cars} />
+            <Admin360Module cars={cars} onExit={() => setActiveSection('dashboard')} />
           </ErrorBoundary>
         )}
         {activeSection === 'banners' && (
@@ -1938,13 +1942,7 @@ export default function AdminPanel({
                               if (files.length > 0) {
                                 const activeId = editingCar ? editingCar.id : newCarId;
                                 setMediaLoading(true);
-                                const uploadedUrls: string[] = [];
-                                for (const file of files) {
-                                  if (file.type.startsWith('image/')) {
-                                    const url = await vehicleMediaService.uploadFile(activeId, file, 'gallery');
-                                    uploadedUrls.push(url);
-                                  }
-                                }
+                                const uploadedUrls = await vehicleMediaService.uploadFiles(activeId, files, 'gallery');
                                 const updated = [...mediaGallery, ...uploadedUrls];
                                 setMediaGallery(updated);
                                 await vehicleMediaService.saveGallery(activeId, updated);
@@ -1971,15 +1969,7 @@ export default function AdminPanel({
                                 if (files.length > 0) {
                                   const activeId = editingCar ? editingCar.id : newCarId;
                                   setMediaLoading(true);
-                                  const uploadedUrls: string[] = [];
-                                  for (const file of files) {
-                                    try {
-                                      const url = await vehicleMediaService.uploadFile(activeId, file, 'gallery');
-                                      uploadedUrls.push(url);
-                                    } catch (err) {
-                                      console.error(err);
-                                    }
-                                  }
+                                  const uploadedUrls = await vehicleMediaService.uploadFiles(activeId, files, 'gallery');
                                   const updated = [...mediaGallery, ...uploadedUrls];
                                   setMediaGallery(updated);
                                   await vehicleMediaService.saveGallery(activeId, updated);

@@ -295,13 +295,12 @@ export const vehicleService = {
       throw new Error(`ID de veículo inválido: ${id}. Somente UUIDs do Supabase são suportados.`);
     }
 
-    const { error } = await supabase
-      .from('vehicles')
-      .delete()
-      .eq('id', id);
+    const { data, error } = await supabase.functions.invoke('admin-vehicles', {
+      body: { action: 'delete', vehicleId: id },
+    });
 
-    if (error) {
-      throw parseSupabaseError(error, `excluir o veículo ${id}`);
+    if (error || data?.error) {
+      throw new Error(data?.error || error?.message || `Não foi possível excluir o veículo ${id}.`);
     }
   },
 

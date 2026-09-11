@@ -18,9 +18,10 @@ import {
 
 interface Admin360ModuleProps {
   cars: Car[];
+  onExit?: () => void;
 }
 
-export function Admin360Module({ cars }: Admin360ModuleProps) {
+export function Admin360Module({ cars, onExit }: Admin360ModuleProps) {
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [selectedViewType, setSelectedViewType] = useState<'exterior' | 'interior'>('exterior');
   
@@ -44,6 +45,11 @@ export function Admin360Module({ cars }: Admin360ModuleProps) {
 
   return (
     <div className="mx-auto mt-4 max-w-5xl space-y-6">
+      {onExit && (
+        <button onClick={onExit} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+          <ArrowLeft size={18} /> Voltar ao painel
+        </button>
+      )}
       <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
         <div className="bg-slate-950 px-6 py-8 text-white sm:px-10"><p className="text-xs font-bold uppercase tracking-[.18em] text-red-400">Estúdio de inspeção</p><h2 className="mt-2 text-3xl font-black">Configuração 360°</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">Escolha o veículo e configure separadamente a visão externa ou interna, os pontos de interesse e as avarias.</p></div>
         
@@ -782,6 +788,15 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
              </div>
           </div>
         </div>
+      )}
+
+      {isFullscreen && (
+        <button
+          onClick={onBack}
+          className="fixed left-4 top-4 z-[70] inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-800 shadow-xl transition hover:bg-slate-100"
+        >
+          <ArrowLeft size={20} /> Voltar aos veículos
+        </button>
       )}
       
       <div className="flex-1 flex flex-col md:flex-row min-h-0 relative">

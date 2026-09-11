@@ -269,6 +269,7 @@ export default function App() {
       await deleteVehicle(id);
     } catch (err) {
       console.error('Error deleting vehicle:', err);
+      throw err;
     }
   };
 

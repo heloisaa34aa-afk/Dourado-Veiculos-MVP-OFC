@@ -37,12 +37,15 @@ export const vehicleMediaService = {
     };
 
     try {
-      // 1. Fetch cover and basic vehicle info
-      const { data: vehicle, error: vError } = await supabase
-        .from('vehicles')
-        .select('cover_image')
-        .eq('id', vehicleId)
-        .maybeSingle();
+      // These records are independent. Loading them together avoids making the
+      // administrator wait for three sequential network round trips.
+      const [vehicleResponse, imagesResponse, videoResponse] = await Promise.all([
+        supabase.from('vehicles').select('cover_image').eq('id', vehicleId).maybeSingle(),
+        supabase.from('vehicle_images').select('image_url, display_order').eq('vehicle_id', vehicleId),
+        supabase.from('vehicle_videos').select('id, vehicle_id, video_url, provider').eq('vehicle_id', vehicleId).maybeSingle(),
+      ]);
+
+      const { data: vehicle, error: vError } = vehicleResponse;
 
       if (vError) {
         console.error('Error fetching vehicle cover:', vError);
@@ -50,11 +53,7 @@ export const vehicleMediaService = {
         result.cover = vehicle.cover_image;
       }
 
-      // 2. Fetch images from vehicle_images
-      const { data: dbImages, error: imgError } = await supabase
-        .from('vehicle_images')
-        .select('*')
-        .eq('vehicle_id', vehicleId);
+      const { data: dbImages, error: imgError } = imagesResponse;
 
       if (imgError) {
         console.error('Error fetching vehicle_images from Supabase:', imgError);
@@ -66,33 +65,9 @@ export const vehicleMediaService = {
         }
       }
 
-      // 3. Fetch 360 frames from vehicle_360_frames
-      const { data: proj } = await supabase
-        .from('vehicle_360_projects')
-        .select('id')
-        .eq('vehicle_id', vehicleId)
-        .maybeSingle();
-
-      if (proj?.id) {
-        const { data: db360, error: err360 } = await supabase
-          .from('vehicle_360_frames')
-          .select('*')
-          .eq('project_id', proj.id)
-          .order('frame_number', { ascending: true });
-
-        if (err360) {
-          console.error('Error fetching vehicle_360_frames from Supabase:', err360);
-        } else if (db360 && db360.length > 0) {
-          result.frames360 = db360.map((f: any) => f.image_url || f.frame_url || '');
-        }
-      }
-
-      // 4. Fetch video from vehicle_videos
-      const { data: dbVideos, error: vidError } = await supabase
-        .from('vehicle_videos')
-        .select('*')
-        .eq('vehicle_id', vehicleId)
-        .maybeSingle();
+      // The 360 editor owns 360 frames. Fetching them here made the ordinary
+      // photo/video tab slower and also broke when a car had exterior + interior.
+      const { data: dbVideos, error: vidError } = videoResponse;
 
       if (!vidError && dbVideos) {
         result.video = {
@@ -272,5 +247,28 @@ export const vehicleMediaService = {
 
     if (onProgress) onProgress(100);
     return publicUrl;
+  },
+
+  async uploadFiles(
+    vehicleId: string,
+    files: File[],
+    folder: 'cover' | 'gallery' | '360' | 'videos',
+    concurrency = 4,
+  ): Promise<string[]> {
+    const acceptedFiles = files.filter(file => folder !== 'gallery' || file.type.startsWith('image/'));
+    const urls = new Array<string>(acceptedFiles.length);
+    let cursor = 0;
+
+    const worker = async () => {
+      while (cursor < acceptedFiles.length) {
+        const index = cursor++;
+        urls[index] = await this.uploadFile(vehicleId, acceptedFiles[index], folder);
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(Math.max(1, concurrency), acceptedFiles.length) }, () => worker()),
+    );
+    return urls;
   }
 };
