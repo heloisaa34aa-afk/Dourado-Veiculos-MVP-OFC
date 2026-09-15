@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Phone, Mail, MapPin, Award, Clock, ArrowUp, ShieldAlert } from 'lucide-react';
+import { Phone, Award, Clock, ArrowUp, ShieldAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface FooterProps {
@@ -23,22 +23,22 @@ export default function Footer({ onAdminClick }: FooterProps) {
           <div className="flex items-center gap-4 justify-center sm:justify-start">
             <Award className="w-8 h-8 text-red-500 shrink-0" />
             <div>
-              <h4 className="text-white font-bold text-sm">Garantia e Procedência</h4>
-              <p className="text-xs text-slate-400">Todos os carros com laudo cautelar aprovado.</p>
+              <h4 className="text-white font-bold text-sm">Informações do veículo</h4>
+              <p className="text-xs text-slate-400">Consulte os dados disponíveis em cada anúncio.</p>
             </div>
           </div>
           <div className="flex items-center gap-4 justify-center sm:justify-start">
             <Clock className="w-8 h-8 text-red-500 shrink-0" />
             <div>
               <h4 className="text-white font-bold text-sm">Atendimento Ágil</h4>
-              <p className="text-xs text-slate-400">Resposta via WhatsApp em menos de 10 minutos.</p>
+              <p className="text-xs text-slate-400">Continue a conversa pelos canais oficiais da loja.</p>
             </div>
           </div>
           <div className="flex items-center gap-4 justify-center sm:justify-start">
             <Phone className="w-8 h-8 text-red-500 shrink-0" />
             <div>
               <h4 className="text-white font-bold text-sm">Financiamento Facilitado</h4>
-              <p className="text-xs text-slate-400">As melhores taxas com os principais bancos.</p>
+              <p className="text-xs text-slate-400">Solicite uma simulação inicial com a equipe.</p>
             </div>
           </div>
         </div>
@@ -58,11 +58,8 @@ export default function Footer({ onAdminClick }: FooterProps) {
             </span>
           </div>
           <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
-            Sua concessionária de confiança com mais de 20 anos de história entregando os melhores carros com transparência, qualidade e pós-venda especializado. Encontre o carro dos seus sonhos hoje.
+            Consulte o estoque disponível, compare as informações publicadas e fale com a equipe para continuar seu atendimento.
           </p>
-          <div className="pt-2 text-xs text-slate-500">
-            CNPJ: 12.345.678/0001-90 | Dourado Automotive Ltda.
-          </div>
         </div>
 
         {/* Col 2: Navigation Links */}
@@ -70,16 +67,13 @@ export default function Footer({ onAdminClick }: FooterProps) {
           <h4 className="text-white font-bold text-sm tracking-wider uppercase">Menu</h4>
           <ul className="space-y-2.5 text-sm">
             <li>
-              <a href="#" className="hover:text-white transition-colors">Estoque Completo</a>
+              <a href="/estoque" className="hover:text-white transition-colors">Estoque Completo</a>
             </li>
             <li>
-              <a href="#" className="hover:text-white transition-colors">Financiamento Especial</a>
+              <a href="/#finance-section" className="hover:text-white transition-colors">Financiamento</a>
             </li>
             <li>
-              <a href="#" className="hover:text-white transition-colors">Sobre Nós</a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-white transition-colors">Termos e Condições</a>
+              <a href="/#advantages-section" className="hover:text-white transition-colors">Como funciona</a>
             </li>
             {onAdminClick && (
               <li className="pt-2 border-t border-slate-900 mt-2">
@@ -97,21 +91,11 @@ export default function Footer({ onAdminClick }: FooterProps) {
 
         {/* Col 3: Contact */}
         <div className="md:col-span-4 space-y-4">
-          <h4 className="text-white font-bold text-sm tracking-wider uppercase">Contato &amp; Localização</h4>
-          <ul className="space-y-3 text-sm">
-            <li className="flex items-start gap-3">
-              <MapPin className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-              <span>Av. Automobilismo, 1000 - Interlagos, São Paulo - SP</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-red-500 shrink-0" />
-              <span>(11) 98765-4321 / (11) 3222-1111</span>
-            </li>
-            <li className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-red-500 shrink-0" />
-              <span>contato@douradoveiculos.com.br</span>
-            </li>
-          </ul>
+          <h4 className="text-white font-bold text-sm tracking-wider uppercase">Atendimento</h4>
+          <div className="flex items-start gap-3 text-sm">
+            <Phone className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
+            <p>Os dados de contato devem ser confirmados nos canais oficiais configurados pela loja.</p>
+          </div>
         </div>
       </div>
 

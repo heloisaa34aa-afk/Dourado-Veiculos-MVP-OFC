@@ -91,7 +91,7 @@ describe('CarRouting', () => {
     // Covered by 4
   });
 
-  it('7. Botao voltar ao estoque navega para "/"', async () => {
+  it('7. Botao voltar ao estoque navega para "/estoque"', async () => {
     (vehicleService.getVehicleById as Mock).mockResolvedValue(null);
     
     render(

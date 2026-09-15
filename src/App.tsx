@@ -23,6 +23,7 @@ const CarDetails = lazy(() => import('./components/CarDetails'));
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const ClientArea = lazy(() => import('./components/ClientArea'));
 const ShowroomHome = lazy(() => import('./pages/ShowroomHome'));
+const VehicleCatalog = lazy(() => import('./pages/VehicleCatalog'));
 const demoAdminEnabled = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEMO_ADMIN === 'true';
 
 // Supabase services and hooks
@@ -374,6 +375,12 @@ export default function App() {
                 onSelectCar={handleSelectCarDetails}
                 onSubmitLead={handleSubmitLead}
               />
+            </Suspense>
+          } />
+
+          <Route path="/estoque" element={
+            <Suspense fallback={<RouteLoading label="Carregando estoque..." />}>
+              <VehicleCatalog cars={cars} loading={carsLoading} error={carsError} onSelectCar={handleSelectCarDetails} />
             </Suspense>
           } />
 
@@ -886,7 +893,7 @@ function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banne
         <p className="text-slate-500 mb-6">{error}</p>
         <div className="flex gap-4">
           <button onClick={refetch} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors">Tentar novamente</button>
-          <button onClick={() => navigate('/')} className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-colors">Voltar ao Estoque</button>
+          <button onClick={() => navigate('/estoque')} className="px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl font-bold transition-colors">Voltar ao Estoque</button>
         </div>
       </div>
     );
@@ -897,7 +904,7 @@ function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banne
       <div className="flex-1 flex flex-col items-center justify-center py-20 text-center px-4 bg-slate-50">
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Veículo não encontrado</h2>
         <p className="text-slate-500 mb-6">O veículo que você está procurando pode ter sido vendido ou não existe mais.</p>
-        <button onClick={() => navigate('/')} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors">Voltar ao Catálogo</button>
+        <button onClick={() => navigate('/estoque')} className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold transition-colors">Voltar ao Catálogo</button>
       </div>
     );
   }
@@ -905,7 +912,7 @@ function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banne
   return (
     <CarDetails 
       car={vehicle} 
-      onBack={() => navigate('/')} 
+      onBack={() => navigate('/estoque')}
       onSubmitLead={onSubmitLead}
       banners={banners}
     />

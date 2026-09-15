@@ -17,6 +17,11 @@ export default function Header({ userProfile, onLogout }: HeaderProps) {
     if (id) window.setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }), 80);
   };
 
+  const goCatalog = () => {
+    setMenuOpen(false);
+    navigate('/estoque');
+  };
+
   return (
     <header className="sticky top-0 z-[70] border-b border-white/10 bg-[#080a0e]/95 text-white backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-8 lg:h-20 lg:px-12">
@@ -26,7 +31,7 @@ export default function Header({ userProfile, onLogout }: HeaderProps) {
         </button>
 
         <nav className="hidden items-center gap-8 lg:flex" aria-label="Navegação principal">
-          <button onClick={() => goHomeSection('estoque')} className="text-sm font-bold text-slate-300 transition hover:text-white">Estoque</button>
+          <button onClick={goCatalog} className="text-sm font-bold text-slate-300 transition hover:text-white">Estoque</button>
           <button onClick={() => goHomeSection('advantages-section')} className="text-sm font-bold text-slate-300 transition hover:text-white">Por que a Dourado</button>
           <button onClick={() => goHomeSection('finance-section')} className="text-sm font-bold text-slate-300 transition hover:text-white">Financiamento</button>
         </nav>
@@ -38,7 +43,7 @@ export default function Header({ userProfile, onLogout }: HeaderProps) {
         </div>
       </div>
 
-      {menuOpen && <div className="border-t border-white/10 bg-[#080a0e] px-4 py-4 lg:hidden"><nav className="grid gap-1"><button onClick={() => goHomeSection('estoque')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Estoque</button><button onClick={() => goHomeSection('advantages-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Por que a Dourado</button><button onClick={() => goHomeSection('finance-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Financiamento</button>{!userProfile && <button onClick={() => navigate('/cliente')} className="mt-2 rounded-xl bg-red-600 px-4 py-3 text-left font-black">Entrar na área do cliente</button>}</nav></div>}
+      {menuOpen && <div className="border-t border-white/10 bg-[#080a0e] px-4 py-4 lg:hidden"><nav className="grid gap-1"><button onClick={goCatalog} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Estoque</button><button onClick={() => goHomeSection('advantages-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Por que a Dourado</button><button onClick={() => goHomeSection('finance-section')} className="rounded-xl px-4 py-3 text-left font-bold hover:bg-white/5">Financiamento</button>{!userProfile && <button onClick={() => navigate('/cliente')} className="mt-2 rounded-xl bg-red-600 px-4 py-3 text-left font-black">Entrar na área do cliente</button>}</nav></div>}
     </header>
   );
 }

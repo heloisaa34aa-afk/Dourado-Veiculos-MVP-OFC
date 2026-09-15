@@ -53,7 +53,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
     galleryItems.push({
       id: 'vehicle-360',
       type: '360',
-      thumbnail: car.images[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'
+      thumbnail: car.images[0] || ''
     });
   }
   car.images.forEach((url, idx) => {
@@ -181,42 +181,10 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
   };
 
   const handleWhatsAppInquiry = () => {
-    // Analytics tracking counter simulation is handled in parent state
-    const text = encodeURIComponent(`Olá Dourado Veículos! Vi o anúncio do ${car.brand} ${car.model} (${car.year}) no site e gostaria de solicitar um orçamento.`);
+    const pageUrl = window.location.href;
+    const text = encodeURIComponent(`Olá Dourado Veículos! Vi o anúncio do ${car.brand} ${car.model} (${car.year}) e gostaria de mais informações. ${pageUrl}`);
     window.open(`https://wa.me/5511987654321?text=${text}`, '_blank');
   };
-
-  // Hotspots definitions
-  const hotspots = [
-    {
-      id: 'motor',
-      top: '32%',
-      left: '26%',
-      title: 'Motorização Turbo',
-      desc: 'Motor Turbo de alta eficiência que combina excelente torque com baixo consumo de combustível.',
-    },
-    {
-      id: 'farol',
-      top: '44%',
-      left: '12%',
-      title: 'Faróis Full LED',
-      desc: 'Conjunto óptico em LED com projetores originais para máxima visibilidade e estilo moderno.',
-    },
-    {
-      id: 'interior',
-      top: '38%',
-      left: '52%',
-      title: 'Interior Premium',
-      desc: 'Acabamento requintado, central multimídia flutuante integrada e bancos com costura dupla.',
-    },
-    {
-      id: 'roda',
-      top: '72%',
-      left: '22%',
-      title: 'Rodas de Liga Leve',
-      desc: 'Rodas esportivas de liga leve diamantadas, sem riscos ou amassados, com pneus excelentes.',
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-[#f3f4f6] pb-16">
@@ -283,17 +251,17 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                       </div>
                     )}
                   </div>
-                ) : (
+                ) : currentItem?.type === 'image' ? (
                   <img
                     key={currentItem?.id || 'default'}
-                    src={(currentItem as any)?.url || car.images[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'}
+                    src={currentItem.url}
                     alt={car.model}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-103"
                     referrerPolicy="no-referrer"
                     decoding="async"
                     fetchPriority="high"
                   />
-                )}
+                ) : <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400"><Camera className="h-12 w-12" /><span className="text-sm font-bold">Foto ainda não publicada</span></div>}
 
 
               {/* Hover overlay prompt */}
@@ -332,7 +300,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                       selectedMediaId === item.id ? 'border-red-600 shadow-md ring-2 ring-red-600/30' : 'border-slate-200 hover:border-slate-400 opacity-80 hover:opacity-100'
                     }`}
                   >
-                    <img src={item.thumbnail} alt={`Thumb ${idx}`} loading="lazy" decoding="async" className="w-full h-full object-cover md:group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" />
+                    {item.thumbnail ? <img src={item.thumbnail} alt={`Miniatura ${idx + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover md:group-hover:scale-105 transition-transform" referrerPolicy="no-referrer" /> : <span className="flex h-full items-center justify-center bg-slate-100 text-slate-400"><Camera className="h-5 w-5" /></span>}
                   </button>
                 ))}
               </div>
@@ -354,17 +322,16 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                 <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>
               </div>
 
-              {/* Price display replaced with quote request callout */}
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                   Disponível para Orçamento
                 </span>
                 <span className="block text-2xl font-black tracking-tight text-white">
-                  Preço sob Consulta
+                  {car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : 'Preço sob consulta'}
                 </span>
                 <p className="mt-2 text-xs font-medium leading-5 text-slate-400">
-                  Entrada facilitada e financiamento sob medida. Solicite sua cotação personalizada hoje mesmo.
+                  Consulte as condições disponíveis com a equipe de atendimento.
                 </p>
               </div>
 
@@ -469,18 +436,6 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                 <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Final da Placa</span>
                   <span className="font-bold text-slate-800">{car.plateEnd}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-400 font-medium">Motor</span>
-                  <span className="font-bold text-slate-800">1.0 / 2.0 Turbo</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-400 font-medium">Portas</span>
-                  <span className="font-bold text-slate-800">4 Portas</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-100">
-                  <span className="text-slate-400 font-medium">Procedência</span>
-                  <span className="font-bold text-emerald-600">Laudo Cautelar Aprovado</span>
                 </div>
               </div>
             </div>

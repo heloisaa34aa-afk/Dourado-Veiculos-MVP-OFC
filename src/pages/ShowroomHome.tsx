@@ -1,7 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, BadgeCheck, Banknote, CarFront, ChevronRight,
-  Headphones, Images, RotateCcw, Search, ShieldCheck, SlidersHorizontal, Sparkles, X,
+  Headphones, Images, RotateCcw, Search, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import type { Car, LeadMessage } from '../types';
 import type { SiteBanner } from '../services/banner.service';
@@ -9,6 +10,7 @@ import CarCard from '../components/CarCard';
 import { PublicPromotion } from '../components/PublicPromotion';
 import { VehicleMatchQuiz } from '../components/VehicleMatchQuiz';
 import { useVehicle360 } from '../hooks/useVehicle360';
+import { catalogUrl, derivePriceBands, formatCompactPrice } from '../utils/vehicleCatalog';
 
 interface ShowroomHomeProps {
   cars: Car[];
@@ -22,7 +24,7 @@ interface ShowroomHomeProps {
 function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onInteractiveChange: (active: boolean) => void }) {
   const [mode, setMode] = useState<'photos' | '360'>('photos');
   const [photoIndex, setPhotoIndex] = useState(0);
-  const images = car.images.length ? car.images : ['https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1200'];
+  const images = car.images;
 
   useEffect(() => {
     setMode('photos');
@@ -45,7 +47,9 @@ function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onIntera
     <div className="relative aspect-[4/3] overflow-hidden bg-[#080a0e] sm:aspect-video">
       {mode === '360'
         ? <Featured360Player car={car} onUnavailable={() => chooseMode('photos')} />
-        : <img key={`${car.id}-${photoIndex}`} src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />}
+        : images.length > 0
+          ? <img key={`${car.id}-${photoIndex}`} src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
+          : <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400"><CarFront className="h-12 w-12" /><span className="text-sm font-bold">Foto ainda não publicada</span></div>}
 
       <div className="absolute right-3 top-3 flex rounded-full border border-white/15 bg-black/65 p-1 text-white backdrop-blur">
         <button onClick={() => chooseMode('photos')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === 'photos' ? 'bg-white text-slate-950' : ''}`}><Images className="h-4 w-4" /> Fotos</button>
@@ -92,9 +96,9 @@ function Featured360Player({ car, onUnavailable }: { car: Car; onUnavailable: ()
 }
 
 export default function ShowroomHome({ cars, loading, carsError, banners, onSelectCar, onSubmitLead }: ShowroomHomeProps) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Todos');
-  const [category, setCategory] = useState('Todos');
   const [financeCar, setFinanceCar] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -107,18 +111,11 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
     const selected = available.filter(car => car.isFeatured);
     return (selected.length ? selected : available).slice(0, 6);
   }, [available]);
+  const discoveryCars = useMemo(() => [...available].sort((a, b) => Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured)) || new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 6), [available]);
   const featured = featuredCars[featuredIndex % Math.max(featuredCars.length, 1)];
   const brands = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.brand))).sort()], [available]);
   const categories = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.category))).sort()], [available]);
-  const filtered = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase('pt-BR');
-    return available.filter(car => {
-      const searchable = `${car.brand} ${car.model} ${car.version} ${car.year} ${car.fuel} ${car.gearbox}`.toLocaleLowerCase('pt-BR');
-      return (!query || searchable.includes(query))
-        && (brand === 'Todos' || car.brand === brand)
-        && (category === 'Todos' || car.category === category);
-    });
-  }, [available, brand, category, search]);
+  const priceBands = useMemo(() => derivePriceBands(available), [available]);
 
   useEffect(() => {
     if (featuredCars.length < 2 || featuredPaused) return;
@@ -145,7 +142,10 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
     setPhone('');
   };
 
-  const clearFilters = () => { setSearch(''); setBrand('Todos'); setCategory('Todos'); };
+  const submitCatalogSearch = (event: FormEvent) => {
+    event.preventDefault();
+    navigate(catalogUrl({ query: search, brand: brand === 'Todos' ? undefined : brand, sort: 'recent' }));
+  };
 
   if (loading && cars.length === 0) {
     return (
@@ -181,9 +181,9 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#estoque" className="inline-flex min-h-13 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-extrabold text-white transition hover:bg-red-600">
+              <button onClick={() => navigate('/estoque')} className="inline-flex min-h-13 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-extrabold text-white transition hover:bg-red-600">
                 Ver carros disponíveis <ArrowRight className="h-4 w-4" />
-              </a>
+              </button>
               <button onClick={() => document.getElementById('vehicle-match')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex min-h-13 items-center gap-2 rounded-full border border-slate-300 bg-white px-6 text-sm font-extrabold text-slate-800 shadow-sm transition hover:border-red-300 hover:text-red-700">
                 Descobrir meu modelo <Sparkles className="h-4 w-4" />
               </button>
@@ -192,7 +192,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
             <div className="mt-9 grid max-w-lg grid-cols-3 gap-3 border-t border-slate-200 pt-6">
               <div><strong className="block text-lg font-black text-slate-950">360°</strong><span className="text-xs text-slate-500">por dentro e fora</span></div>
               <div><strong className="block text-lg font-black text-slate-950">Estoque real</strong><span className="text-xs text-slate-500">atualizado</span></div>
-              <div><strong className="block text-lg font-black text-slate-950">Compra segura</strong><span className="text-xs text-slate-500">com procedência</span></div>
+              <div><strong className="block text-lg font-black text-slate-950">Compare</strong><span className="text-xs text-slate-500">dados disponíveis</span></div>
             </div>
           </div>
 
@@ -214,7 +214,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
 
       <section className="mx-auto max-w-[1380px] px-4 py-8 sm:px-8 sm:py-10">
         <div className="rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_30px_80px_rgba(15,23,42,.16)] sm:p-6">
-          <div className="grid gap-3 lg:grid-cols-[1.7fr_.7fr_.7fr_auto]">
+          <form onSubmit={submitCatalogSearch} className="grid gap-3 lg:grid-cols-[1.7fr_.7fr_auto]">
             <label className="flex min-h-14 items-center gap-3 rounded-2xl bg-slate-100 px-4 focus-within:ring-2 focus-within:ring-red-500">
               <Search className="h-5 w-5 text-slate-400" />
               <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque por modelo, versão ou combustível" className="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400" />
@@ -222,44 +222,45 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
             <select aria-label="Filtrar por marca" value={brand} onChange={event => setBrand(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500">
               {brands.map(item => <option key={item}>{item}</option>)}
             </select>
-            <select aria-label="Filtrar por categoria" value={category} onChange={event => setCategory(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500">
-              {categories.map(item => <option key={item}>{item}</option>)}
-            </select>
-            {(search || brand !== 'Todos' || category !== 'Todos') && <button onClick={clearFilters} aria-label="Limpar filtros" className="flex min-h-14 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-bold text-slate-600 hover:bg-slate-100"><X className="h-4 w-4" /> Limpar</button>}
-          </div>
+            <button type="submit" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 text-sm font-black text-white hover:bg-red-500">Buscar no estoque <ArrowRight className="h-4 w-4" /></button>
+          </form>
         </div>
       </section>
 
-      <section id="estoque" className="mx-auto max-w-[1380px] scroll-mt-28 px-4 py-12 sm:px-8 lg:py-20">
+      <section className="mx-auto max-w-[1380px] px-4 py-12 sm:px-8 lg:py-20">
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[.2em] text-red-600"><Sparkles className="h-4 w-4" /> Seleção atual</p>
             <h2 className="text-4xl font-black tracking-[-.045em] sm:text-5xl">Carros que merecem sua atenção.</h2>
           </div>
-          <p className="max-w-md text-sm leading-6 text-slate-500">{filtered.length} veículo{filtered.length === 1 ? '' : 's'} disponível{filtered.length === 1 ? '' : 'is'} para conhecer agora.</p>
+          <button onClick={() => navigate('/estoque')} className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border border-slate-300 bg-white px-5 text-sm font-extrabold hover:border-red-300 hover:text-red-600">Ver estoque completo <ArrowRight className="h-4 w-4" /></button>
         </div>
 
         <div className="mb-8 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
           {categories.map(item => (
-            <button key={item} onClick={() => setCategory(item)} className={`shrink-0 rounded-full px-5 py-2.5 text-sm font-bold transition ${category === item ? 'bg-slate-950 text-white' : 'border border-slate-200 bg-white text-slate-600 hover:border-slate-400'}`}>
+            <button key={item} onClick={() => navigate(item === 'Todos' ? '/estoque' : catalogUrl({ category: item, sort: 'recent' }))} className="shrink-0 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:border-slate-400 hover:text-slate-950">
               {item === 'Todos' ? 'Todos os modelos' : item}
             </button>
           ))}
         </div>
 
         {carsError && <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">Não foi possível carregar o estoque agora. Tente novamente em instantes.</div>}
-        {filtered.length ? (
+        {available.length ? (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-            {filtered.map(car => <CarCard key={car.id} car={car} onSelect={onSelectCar} />)}
+            {discoveryCars.map(car => <CarCard key={car.id} car={car} onSelect={onSelectCar} />)}
           </div>
         ) : (
           <div className="rounded-[32px] border border-dashed border-slate-300 bg-white px-6 py-20 text-center">
-            <SlidersHorizontal className="mx-auto mb-4 h-9 w-9 text-slate-300" />
-            <h3 className="text-xl font-black">Nenhum veículo com esses filtros.</h3>
-            <button onClick={clearFilters} className="mt-4 text-sm font-bold text-red-600">Ver estoque completo</button>
+            <CarFront className="mx-auto mb-4 h-9 w-9 text-slate-300" />
+            <h3 className="text-xl font-black">Novos veículos serão publicados em breve.</h3>
           </div>
         )}
       </section>
+
+      {priceBands.length > 0 && <section className="mx-auto max-w-[1380px] px-4 pb-20 sm:px-8">
+        <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.2em] text-red-600">Faixa de investimento</p><h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Comece pelo valor que faz sentido.</h2></div>
+        <div className="grid gap-4 md:grid-cols-3">{priceBands.map(band => <button key={band.label} onClick={() => navigate(catalogUrl({ minPrice: band.minPrice, maxPrice: band.maxPrice, sort: 'price-asc' }))} className="group rounded-[26px] border border-slate-200 bg-white p-6 text-left transition hover:-translate-y-1 hover:border-red-200 hover:shadow-xl"><span className="text-xs font-black uppercase tracking-wider text-slate-400">Explorar estoque</span><strong className="mt-3 block text-xl font-black group-hover:text-red-600">{band.label}</strong><span className="mt-2 block text-sm text-slate-500">{band.minPrice ? `A partir de ${formatCompactPrice(band.minPrice)}` : 'Opções de entrada'}{band.maxPrice ? ` · até ${formatCompactPrice(band.maxPrice)}` : ''}</span></button>)}</div>
+      </section>}
 
       <VehicleMatchQuiz cars={available} onSelectCar={onSelectCar} onSubmitLead={onSubmitLead} />
 
@@ -276,9 +277,9 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           {[
-            [ShieldCheck, 'Procedência', 'Laudo e histórico apresentados com clareza.'],
-            [BadgeCheck, 'Inspeção', 'Mais de 100 pontos avaliados antes da oferta.'],
-            [Banknote, 'Financiamento', 'Condições encontradas para o seu momento.'],
+            [ShieldCheck, 'Informações', 'Consulte os dados disponíveis de cada veículo.'],
+            [BadgeCheck, 'Detalhes', 'Compare fotos, características e observações publicadas.'],
+            [Banknote, 'Financiamento', 'Solicite uma simulação inicial com a equipe.'],
             [Headphones, 'Atendimento', 'IA para dúvidas rápidas e vendedor quando precisar.'],
           ].map(([Icon, title, copy]) => {
             const ItemIcon = Icon as typeof ShieldCheck;
