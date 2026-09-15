@@ -1,6 +1,6 @@
 import React from 'react';
-import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeAll, afterEach } from 'vitest';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { Admin360Module } from './Admin360Module';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ImageCoordinateStage } from './360/ImageCoordinateStage';
@@ -21,6 +21,11 @@ class ResizeObserverMock {
 beforeAll(() => {
   global.ResizeObserver = ResizeObserverMock;
   window.ResizeObserver = ResizeObserverMock;
+});
+
+afterEach(() => {
+  cleanup();
+  vi.clearAllMocks();
 });
 
 const mockCars: Car[] = [
@@ -76,6 +81,27 @@ describe('Admin360Module', () => {
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'car-1' } });
     expect(screen.getAllByText(/Editando visão/i)[0]).toBeDefined();
+  });
+
+  it('mantém voltar e os seletores externo e interno visíveis no estúdio', () => {
+    vi.mocked(useVehicle360).mockReturnValue({
+      project: { id: 'p1', frames: [], vehicleId: 'car-1', status: 'draft', frameCount: 0, createdAt: '', updatedAt: '' },
+      frames: [], hotspots: [], damageMarkers: [], loading: false, uploading: false,
+      uploadProgress: { current: 0, total: 0 }, reload: vi.fn(), currentFrame: 0,
+      setCurrentFrame: vi.fn(), totalFrames: 0, handlePointerDown: vi.fn(), handlePointerMove: vi.fn(),
+      handlePointerUp: vi.fn(), nextFrame: vi.fn(), prevFrame: vi.fn(), uploadFrames: vi.fn(),
+      removeFrame: vi.fn(), publishProject: vi.fn(), unpublishProject: vi.fn(), deleteProject: vi.fn(),
+      createHotspot: vi.fn(), updateHotspot: vi.fn(), deleteHotspot: vi.fn(), createDamageMarker: vi.fn(),
+      updateDamageMarker: vi.fn(), deleteDamageMarker: vi.fn(),
+    } as any);
+
+    render(<Admin360Module cars={mockCars} />);
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'car-1' } });
+    expect(screen.getByRole('button', { name: /Voltar aos veículos/i })).toBeDefined();
+    const internalButton = screen.getByRole('button', { name: '360° Interno' });
+    expect(internalButton).toBeDefined();
+    fireEvent.click(internalButton);
+    expect(vi.mocked(useVehicle360)).toHaveBeenLastCalledWith('car-1', 'admin', 'interior');
   });
 });
 

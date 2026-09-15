@@ -136,7 +136,20 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-[100dvh] bg-gray-50"><Loader2 className="animate-spin text-indigo-500 w-12 h-12" /></div>;
+    return (
+      <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col bg-gray-50">
+        <div className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-3 py-2 shadow-sm sm:px-6">
+          <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-100">
+            <ArrowLeft size={20} /> Voltar aos veículos
+          </button>
+          <div className="flex items-center gap-1 rounded-xl bg-gray-100 p-1" aria-label="Tipo de visualização 360">
+            <button onClick={() => onViewTypeChange('exterior')} aria-pressed={viewType === 'exterior'} className={`rounded-lg px-3 py-2 text-sm font-bold ${viewType === 'exterior' ? 'bg-white text-gray-950 shadow' : 'text-gray-500'}`}>360° Externo</button>
+            <button onClick={() => onViewTypeChange('interior')} aria-pressed={viewType === 'interior'} className={`rounded-lg px-3 py-2 text-sm font-bold ${viewType === 'interior' ? 'bg-white text-gray-950 shadow' : 'text-gray-500'}`}>360° Interno</button>
+          </div>
+        </div>
+        <div className="flex flex-1 items-center justify-center"><Loader2 className="h-12 w-12 animate-spin text-indigo-500" /></div>
+      </div>
+    );
   }
 
   // Assuming error is returned by useVehicle360, but if not we can just show empty state
@@ -754,8 +767,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
 
   return (
     <div ref={workspaceRef} className="fixed inset-0 z-50 flex flex-col bg-gray-950 h-[100dvh]">
-      {!isFullscreen && (
-        <div className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 shadow-sm shrink-0 overflow-x-auto">
+      <div className="min-h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 shadow-sm shrink-0">
           <div className="flex items-center gap-4 shrink-0">
             <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
               <ArrowLeft size={20} /> Voltar aos veículos
@@ -768,15 +780,17 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
               <div className="text-xs font-medium text-gray-500">Editando visão {viewType === 'exterior' ? 'externa' : 'interna'} • {car.plateEnd} • {totalFrames} frames</div>
             </div>
           </div>
-          <div className="flex items-center gap-3 bg-gray-100 p-1 rounded-lg shrink-0 mx-4">
+          <div className="order-3 flex w-full shrink-0 items-center justify-center gap-1 rounded-lg bg-gray-100 p-1 sm:order-none sm:mx-4 sm:w-auto" aria-label="Tipo de visualização 360">
             <button
               onClick={() => onViewTypeChange('exterior')}
+              aria-pressed={viewType === 'exterior'}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewType === 'exterior' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
             >
               360° Externo
             </button>
             <button
               onClick={() => onViewTypeChange('interior')}
+              aria-pressed={viewType === 'interior'}
               className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${viewType === 'interior' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
             >
               360° Interno
@@ -787,17 +801,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
                {project.status === 'completed' ? 'Publicado' : 'Rascunho'}
              </div>
           </div>
-        </div>
-      )}
-
-      {isFullscreen && (
-        <button
-          onClick={onBack}
-          className="fixed left-4 top-4 z-[70] inline-flex min-h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-800 shadow-xl transition hover:bg-slate-100"
-        >
-          <ArrowLeft size={20} /> Voltar aos veículos
-        </button>
-      )}
+      </div>
       
       <div className="flex-1 flex flex-col md:flex-row min-h-0 relative">
          <div className="flex-1 flex flex-col min-w-0 bg-gray-950 relative">
