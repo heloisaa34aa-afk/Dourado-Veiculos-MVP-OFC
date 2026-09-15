@@ -23,6 +23,9 @@ export function normalizeVehicle(row) {
     mileage: Number(row.mileage || 0),
     transmission: row.transmission || '',
     fuel: row.fuel || '',
+    color: row.color || '',
+    description: row.description || '',
+    features: Array.isArray(row.vehicle_features) ? row.vehicle_features.map(item => item.feature).filter(Boolean) : [],
     category: row.categories?.name || '',
     image: cover,
     images,
@@ -54,6 +57,19 @@ function formatMileage(value) {
   return value === 0 ? '0 km' : `${new Intl.NumberFormat('pt-BR').format(value)} km`;
 }
 
+function featureIcon(feature) {
+  const value = feature.toLocaleLowerCase('pt-BR');
+  if (/(ar-condicionado|climatiza)/.test(value)) return '❄️';
+  if (/(multimídia|bluetooth|android|carplay|som|rádio)/.test(value)) return '📱';
+  if (/(banco|interior|couro)/.test(value)) return '💺';
+  if (/(vidro|trava|alarme|chave)/.test(value)) return '🔒';
+  if (/(airbag|abs|segurança|sensor|câmera)/.test(value)) return '🛡️';
+  if (/(roda|pneu)/.test(value)) return '🛞';
+  if (/(direção)/.test(value)) return '🎯';
+  if (/(motor|turbo)/.test(value)) return '💪';
+  return '✨';
+}
+
 export function composeVehicleMessage(vehicle, siteUrl, template = 'details', customerName = '') {
   return composeVehicleSequence(vehicle, siteUrl, template, customerName).join('\n\n');
 }
@@ -63,11 +79,13 @@ export function composeVehicleSequence(vehicle, siteUrl, template = 'details', c
   const title = vehicleTitle(vehicle);
   const url = vehicleUrl(vehicle, siteUrl);
   const facts = [
-    vehicle.year && `• Ano: ${vehicle.year}`,
-    vehicle.mileage >= 0 && `• Quilometragem: ${formatMileage(vehicle.mileage)}`,
-    vehicle.transmission && `• Câmbio: ${vehicle.transmission}`,
-    vehicle.fuel && `• Combustível: ${vehicle.fuel}`,
-    vehicle.price > 0 && `• Valor: *${formatPrice(vehicle.price)}*`
+    vehicle.year && `📅 *Ano/Modelo:* ${vehicle.year}`,
+    vehicle.mileage >= 0 && `🛣️ *Quilometragem:* ${formatMileage(vehicle.mileage)}`,
+    vehicle.transmission && `⚙️ *Câmbio:* ${vehicle.transmission}`,
+    vehicle.fuel && `⛽ *Combustível:* ${vehicle.fuel}`,
+    vehicle.color && `🎨 *Cor:* ${vehicle.color}`,
+    ...vehicle.features.slice(0, 12).map(feature => `${featureIcon(feature)} *${feature}*`),
+    vehicle.price > 0 ? `💰 *Valor:* ${formatPrice(vehicle.price)}` : '💰 *Valor:* Consulte nossa equipe'
   ].filter(Boolean).join('\n');
 
   const introductions = {
@@ -85,7 +103,7 @@ export function composeVehicleSequence(vehicle, siteUrl, template = 'details', c
 
   const sequence = [
     introductions[template] || introductions.details,
-    `🚘 *${title}*\n${facts}`,
+    `🚘 *${title}*\n\n${facts}${vehicle.description ? `\n\n📝 ${vehicle.description}` : ''}`,
     closings[template] || closings.details
   ];
 

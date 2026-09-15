@@ -1,5 +1,6 @@
 import { ArrowUpRight, CarFront } from 'lucide-react';
 import type { Car } from '../types';
+import { formatVehiclePrice } from '../utils/vehiclePresentation';
 
 interface CarCardProps { car: Car; onSelect: (car: Car) => void }
 
@@ -22,7 +23,7 @@ export default function CarCard({ car, onSelect }: CarCardProps) {
           <div className="border-x border-slate-100 px-4"><span className="block text-[11px] font-bold uppercase text-slate-400">Km</span><strong>{car.km === 0 ? 'Zero' : `${Math.round(car.km / 1000)} mil`}</strong></div>
           <div className="pl-4"><span className="block text-[11px] font-bold uppercase text-slate-400">Câmbio</span><strong className="block truncate">{car.gearbox}</strong></div>
         </div>
-        <div className="mt-5 flex items-center justify-between"><span className="flex items-center gap-2 text-xs font-bold text-slate-500"><CarFront className="h-4 w-4 text-red-600" /> {car.category}</span><span className="text-sm font-black text-slate-950">Ver veículo</span></div>
+        <div className="mt-5 flex items-end justify-between gap-3"><div><span className="flex items-center gap-2 text-xs font-bold text-slate-500"><CarFront className="h-4 w-4 text-red-600" /> {car.category}</span><strong className="mt-2 block text-lg font-black text-slate-950">{formatVehiclePrice(car.price)}</strong></div><span className="pb-1 text-sm font-black text-slate-950">Ver veículo</span></div>
       </div>
     </article>
   );

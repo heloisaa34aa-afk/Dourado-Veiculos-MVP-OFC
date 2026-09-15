@@ -40,6 +40,8 @@ input:focus, select:focus, textarea:focus { border-color: #e30613; box-shadow: 0
 .composer-title button { width: 36px; height: 36px; border: 0; border-radius: 10px; background: #e5e7eb; font-size: 24px; }
 .composer-panel select { margin-bottom: 16px; }
 .media-section { margin-bottom: 16px; }
+.media-bulk-actions { display: grid; grid-template-columns: 1.5fr 1fr; gap: 8px; margin: 6px 0 10px; }
+.media-bulk-actions .primary, .media-bulk-actions .secondary { min-height: 40px; padding: 0 8px; font-size: 11px; }
 .media-list { display: flex; gap: 9px; overflow-x: auto; padding: 2px 1px 8px; }
 .media-card { position: relative; flex: 0 0 104px; overflow: hidden; border: 1px solid #dfe3e8; border-radius: 12px; background: #fff; }
 .media-card img { display: block; width: 104px; height: 72px; object-fit: cover; background: #e5e7eb; }

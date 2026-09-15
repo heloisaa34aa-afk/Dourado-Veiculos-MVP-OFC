@@ -8,7 +8,8 @@ Extensão Chrome Manifest V3 que abre um painel lateral no WhatsApp Web, consult
 - pesquisa por marca, modelo, versão, ano ou categoria;
 - mostra foto, dados essenciais, quilometragem e preço;
 - gera uma sequência de mensagens com emojis para detalhes, disponibilidade, financiamento ou troca;
-- oferece uma galeria para copiar fotos reais e colar diretamente no WhatsApp, sem misturar frames do 360°;
+- anexa até 10 fotos reais de uma vez na conversa, com revisão antes do envio e sem misturar frames do 360°;
+- mantém a cópia individual e oferece o download das fotos como alternativa;
 - abre vídeos cadastrados para o vendedor compartilhar quando disponíveis;
 - reconhece o nome exibido na conversa quando o WhatsApp disponibiliza essa informação;
 - copia ou insere cada mensagem separadamente como rascunho no campo da conversa;
@@ -31,6 +32,6 @@ O MVP já utiliza o projeto Supabase e o domínio público atuais. A configuraç
 
 A estrutura do WhatsApp Web pode mudar. Por isso a extensão procura o editor por atributos semânticos e não dispara `Enter`. Se o WhatsApp alterar o campo de mensagem, atualize `findComposer()` em `content.js`.
 
-Por segurança do navegador, a foto é copiada para o clipboard após uma ação do vendedor. Depois, basta focar a conversa, pressionar `Ctrl+V`, conferir a prévia e enviar.
+O anexo múltiplo prepara as imagens e aciona o seletor de mídia do WhatsApp Web, mas nunca confirma o envio. Se a interface do WhatsApp mudar, use **Baixar fotos** e selecione os arquivos baixados na conversa.
 
 Para publicar na Chrome Web Store, prepare ícones, política de privacidade e revise as permissões antes do envio.

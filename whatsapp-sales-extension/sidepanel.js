@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, composeVehicleSequence, filterVehicles, normalizeVehicl
 const state = { vehicles: [], selected: null, customerName: '', config: { ...DEFAULT_CONFIG }, messages: [], currentMessage: 0 };
 const elements = Object.fromEntries([
   'chatContext', 'customerName', 'searchInput', 'inventoryStatus', 'vehicleList', 'composerPanel',
-  'selectedVehicleTitle', 'templateSelect', 'mediaSection', 'mediaList', 'messageSequence', 'sequenceProgress', 'closeComposer', 'copyButton',
+  'selectedVehicleTitle', 'templateSelect', 'mediaSection', 'mediaList', 'attachAllButton', 'downloadAllButton', 'messageSequence', 'sequenceProgress', 'closeComposer', 'copyButton',
   'insertButton', 'refreshButton', 'toast'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -96,6 +96,63 @@ async function imageAsPngBlob(url) {
   context.drawImage(bitmap, 0, 0);
   bitmap.close();
   return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao preparar a imagem.')), 'image/png'));
+}
+
+async function imageAsAttachment(url, index) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Foto ${index + 1} indisponível (${response.status})`);
+  const bitmap = await createImageBitmap(await response.blob());
+  const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  const blob = await new Promise((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error('Falha ao preparar foto.')), 'image/jpeg', .86));
+  const dataUrl = await new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Falha ao ler foto.'));
+    reader.readAsDataURL(blob);
+  });
+  return { name: `dourado-veiculo-${String(index + 1).padStart(2, '0')}.jpg`, type: 'image/jpeg', dataUrl };
+}
+
+async function attachAllPhotos() {
+  const urls = state.selected?.images?.slice(0, 10) || [];
+  if (!urls.length) return showToast('Este veículo ainda não possui fotos.');
+  const tab = await getActiveWhatsAppTab();
+  if (!tab) return showToast('Abra a conversa do cliente no WhatsApp Web.');
+  const originalLabel = elements.attachAllButton.textContent;
+  elements.attachAllButton.disabled = true;
+  try {
+    elements.attachAllButton.textContent = `Preparando 0/${urls.length}`;
+    const attachments = [];
+    for (let index = 0; index < urls.length; index += 1) {
+      attachments.push(await imageAsAttachment(urls[index], index));
+      elements.attachAllButton.textContent = `Preparando ${index + 1}/${urls.length}`;
+    }
+    const response = await chrome.tabs.sendMessage(tab.id, { type: 'ATTACH_IMAGES', images: attachments });
+    if (!response?.ok) throw new Error(response?.error || 'O WhatsApp não aceitou os anexos.');
+    showToast(`${attachments.length} fotos anexadas. Confira a prévia antes de enviar.`);
+  } catch (error) {
+    showToast(error?.message || 'Não foi possível anexar as fotos. Use “Baixar fotos”.');
+  } finally {
+    elements.attachAllButton.disabled = false;
+    elements.attachAllButton.textContent = originalLabel;
+  }
+}
+
+async function downloadAllPhotos() {
+  const urls = state.selected?.images?.slice(0, 10) || [];
+  if (!urls.length) return showToast('Este veículo ainda não possui fotos.');
+  const folder = vehicleTitle(state.selected).replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'veiculo';
+  await Promise.all(urls.map((url, index) => chrome.downloads.download({
+    url,
+    filename: `Dourado-${folder}/foto-${String(index + 1).padStart(2, '0')}.jpg`,
+    saveAs: false,
+  })));
+  showToast(`${urls.length} fotos enviadas para Downloads.`);
 }
 
 async function copyImage(url, button) {
@@ -226,7 +283,7 @@ async function loadInventory() {
       apikey: state.config.supabaseAnonKey,
       Authorization: `Bearer ${state.config.supabaseAnonKey}`
     };
-    const vehicleSelect = 'id,brand,model,version,year,price,mileage,transmission,fuel,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order)';
+    const vehicleSelect = 'id,brand,model,version,year,price,mileage,transmission,fuel,color,description,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order),vehicle_features(feature)';
     const [vehicleResponse, videoResponse] = await Promise.all([
       fetch(`${baseUrl}/vehicles?select=${encodeURIComponent(vehicleSelect)}&order=featured.desc,created_at.desc`, { headers }),
       fetch(`${baseUrl}/vehicle_videos?select=${encodeURIComponent('vehicle_id,video_url,provider')}`, { headers }).catch(() => null)
@@ -288,6 +345,8 @@ elements.closeComposer.addEventListener('click', () => { elements.composerPanel.
 elements.refreshButton.addEventListener('click', async () => { await Promise.all([refreshChatContext(), loadInventory()]); showToast('Estoque atualizado.'); });
 elements.copyButton.addEventListener('click', async () => { await navigator.clipboard.writeText(state.messages[state.currentMessage] || ''); showToast('Mensagem atual copiada.'); });
 elements.insertButton.addEventListener('click', insertInConversation);
+elements.attachAllButton.addEventListener('click', attachAllPhotos);
+elements.downloadAllButton.addEventListener('click', downloadAllPhotos);
 chrome.tabs.onActivated.addListener(refreshChatContext);
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => { if (changeInfo.status === 'complete') refreshChatContext(); });
 

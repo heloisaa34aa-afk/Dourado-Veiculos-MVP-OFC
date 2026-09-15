@@ -5,6 +5,8 @@ const row = {
   id: 'car-1', brand: 'Toyota', model: 'Corolla', version: 'XEi', year: 2024,
   price: 120000, mileage: 15000, transmission: 'Automático', fuel: 'Flex', sold: false,
   categories: { name: 'Sedan' }, cover_image: 'cover.jpg',
+  color: 'Prata', description: 'Único dono.',
+  vehicle_features: [{ feature: 'Central multimídia' }, { feature: 'Ar-condicionado' }],
   vehicle_images: [{ image_url: 'b.jpg', display_order: 2 }, { image_url: 'a.jpg', display_order: 1 }, { image_url: 'cover.jpg', display_order: 0 }],
   vehicle_videos: [{ video_url: 'video.mp4', provider: 'upload' }]
 };
@@ -16,6 +18,7 @@ describe('extensão Dourado Vendas', () => {
     expect(vehicle.images).toEqual(['cover.jpg', 'a.jpg', 'b.jpg']);
     expect(vehicle.videos).toEqual(['video.mp4']);
     expect(vehicle.category).toBe('Sedan');
+    expect(vehicle.features).toEqual(['Central multimídia', 'Ar-condicionado']);
     expect(vehicle.sold).toBe(false);
   });
 
@@ -29,6 +32,9 @@ describe('extensão Dourado Vendas', () => {
     expect(sequence).toHaveLength(3);
     expect(sequence[0]).toContain('Dourado Veículos');
     expect(sequence[1]).toContain('R$ 120.000');
+    expect(sequence[1]).toContain('📱 *Central multimídia*');
+    expect(sequence[1]).toContain('❄️ *Ar-condicionado*');
+    expect(sequence[1]).toContain('Único dono.');
     expect(sequence[2]).toContain('/veiculo/car-1');
     expect(sequence.join(' ')).not.toContain('cover.jpg');
   });

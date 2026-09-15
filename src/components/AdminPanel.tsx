@@ -31,8 +31,8 @@ const trackingLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_TR
 interface AdminPanelProps {
   cars: CarType[];
   messages: LeadMessage[];
-  onAddCar: (car: CarType) => void;
-  onEditCar: (car: CarType) => void;
+  onAddCar: (car: CarType) => Promise<void>;
+  onEditCar: (car: CarType) => Promise<void>;
   onDeleteCar: (id: string) => Promise<void>;
   onUpdateMessageStatus: (id: string, status: LeadMessage['status']) => void;
   onDeleteMessage: (id: string) => void;
@@ -85,6 +85,8 @@ export default function AdminPanel({
   const [mediaVideoProvider, setMediaVideoProvider] = useState<'upload' | 'youtube'>('youtube');
   const [mediaLoading, setMediaLoading] = useState(false);
   const [deletingVehicleId, setDeletingVehicleId] = useState<string | null>(null);
+  const [savingVehicle, setSavingVehicle] = useState(false);
+  const [vehicleFormError, setVehicleFormError] = useState('');
 
   // Helper UUID generator for draft/new cars
   const generateUUID = () => {
@@ -251,6 +253,7 @@ export default function AdminPanel({
 
   // Reset form helper
   const resetForm = (carToEdit: CarType | null = null) => {
+    setVehicleFormError('');
     setModalTab('specs');
     if (carToEdit) {
       setEditingCar(carToEdit);
@@ -306,7 +309,7 @@ export default function AdminPanel({
       setFormBrand('');
       setFormModel('');
       setFormVersion('');
-      setFormPrice(0);
+      setFormPrice('');
       setFormYear('2023');
       setFormYearFabricacao('2023');
       setFormYearModelo('2023');
@@ -323,7 +326,7 @@ export default function AdminPanel({
       setFormIsPromo(false);
       setFormIsSold(false);
       setFormImagesText('https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800');
-      setFormFeaturesText('Direção Elétrica, Ar Condicionado, Vidros Elétricos, Alarme, Central Multimídia, Airbag, Freios ABS');
+      setFormFeaturesText('');
       
       // Initialize blank media states for new vehicle
       setMediaCover(null);
@@ -338,9 +341,17 @@ export default function AdminPanel({
     setIsModalOpen(true);
   };
 
-  const handleSaveCar = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formBrand || !formModel || !formVersion || formKm === '') return;
+  const handleSaveCar = async (e?: React.SyntheticEvent) => {
+    e?.preventDefault();
+    setVehicleFormError('');
+    if (!formBrand || !formModel || !formVersion || formKm === '') {
+      setVehicleFormError('Preencha marca, modelo, versão e quilometragem.');
+      return;
+    }
+    if (formPrice === '' || !Number.isFinite(Number(formPrice)) || Number(formPrice) <= 0) {
+      setVehicleFormError('Informe um preço de venda válido e maior que zero.');
+      return;
+    }
 
     const targetId = editingCar ? editingCar.id : newCarId;
 
@@ -379,7 +390,7 @@ export default function AdminPanel({
       fuel: formFuel,
       color: formColor || 'Cor Padrão',
       plateEnd: formPlateEnd || '9',
-      description: formDescription || `Veículo ${formBrand} ${formModel} em perfeito estado de conservação, revisado e pronto para entrega.`,
+      description: formDescription.trim(),
       images: images,
       features: features,
       category: formCategory,
@@ -392,13 +403,19 @@ export default function AdminPanel({
       createdAt: editingCar ? editingCar.createdAt : new Date().toISOString()
     };
 
-    if (editingCar) {
-      onEditCar(carData);
-    } else {
-      onAddCar(carData);
+    setSavingVehicle(true);
+    try {
+      if (editingCar) {
+        await onEditCar(carData);
+      } else {
+        await onAddCar(carData);
+      }
+      setIsModalOpen(false);
+    } catch (error) {
+      setVehicleFormError(error instanceof Error ? error.message : 'Não foi possível salvar o veículo.');
+    } finally {
+      setSavingVehicle(false);
     }
-
-    setIsModalOpen(false);
   };
 
   // Dynamic dashboard calculations based on current state!
@@ -837,6 +854,7 @@ export default function AdminPanel({
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
                     <th className="px-6 py-4">Veículo</th>
+                    <th className="px-6 py-4">Preço</th>
                     <th className="px-6 py-4">Ano/Quilometragem</th>
                     <th className="px-6 py-4">Categoria/Câmbio</th>
                     <th className="px-6 py-4">Status</th>
@@ -868,6 +886,12 @@ export default function AdminPanel({
                               <p className="text-xs text-slate-400 mt-0.5">{car.version}</p>
                             </div>
                           </div>
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <strong className={car.price > 0 ? 'text-slate-900' : 'text-amber-600'}>
+                            {car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : 'Preço pendente'}
+                          </strong>
                         </td>
 
                         {/* Year + KM */}
@@ -2242,10 +2266,13 @@ export default function AdminPanel({
               </form>
 
               {/* Modal footer actions */}
-              <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-slate-50">
+              <div className="p-6 border-t border-slate-100 bg-slate-50">
+                {vehicleFormError && <p role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{vehicleFormError}</p>}
+                <div className="flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
+                  disabled={savingVehicle}
                   className="px-5 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-200 transition-colors cursor-pointer"
                 >
                   Cancelar
@@ -2253,10 +2280,12 @@ export default function AdminPanel({
                 <button
                   type="button"
                   onClick={handleSaveCar}
-                  className="px-8 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-xl shadow-md transition-colors cursor-pointer"
+                  disabled={savingVehicle}
+                  className="px-8 py-2 bg-red-600 hover:bg-red-700 disabled:cursor-wait disabled:bg-slate-400 text-white text-sm font-bold rounded-xl shadow-md transition-colors cursor-pointer"
                 >
-                  {editingCar ? 'Salvar Alterações' : 'Publicar Anúncio'}
+                  {savingVehicle ? 'Salvando...' : editingCar ? 'Salvar Alterações' : 'Publicar Anúncio'}
                 </button>
+                </div>
               </div>
 
             </motion.div>

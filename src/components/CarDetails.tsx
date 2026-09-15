@@ -20,6 +20,7 @@ import type { SiteBanner } from '../services/banner.service';
 import { useSettings } from '../hooks/useSettings';
 import CarCard from './CarCard';
 import { shareVehicle } from '../utils/vehicleShare';
+import { coverImageFile, formatVehiclePrice, vehicleCommercialLines, vehicleShareText } from '../utils/vehiclePresentation';
 
 const HOTSPOT_VISIBLE_RANGE = 2;
 
@@ -206,14 +207,15 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
   const handleWhatsAppInquiry = () => {
     if (!whatsappNumber) return;
     const pageUrl = window.location.href;
-    const yearText = car.year ? ` ${car.year}` : '';
-    const text = encodeURIComponent(`Olá! Tenho interesse no ${vehicleName}${yearText} que vi no site da Dourado Veículos.\n\nVeja o veículo:\n${pageUrl}`);
+    const text = encodeURIComponent(`Olá! Tenho interesse neste veículo:\n\n${vehicleShareText(car, pageUrl)}`);
     window.open(`https://wa.me/${whatsappNumber}?text=${text}`, '_blank');
   };
 
   const handleShare = async () => {
-    const details = [vehicleName, car.year, car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : ''].filter(Boolean).join(' · ');
-    const result = await shareVehicle({ title: vehicleName, text: details, url: window.location.href });
+    const url = window.location.href;
+    const text = vehicleShareText(car, url);
+    const cover = await coverImageFile(car.images[0] || '', vehicleName);
+    const result = await shareVehicle({ title: vehicleName, text, url, files: cover ? [cover] : undefined });
     if (result === 'copied') {
       setShareStatus('copied');
       window.setTimeout(() => setShareStatus('idle'), 2200);
@@ -357,18 +359,18 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
                 {car.version && <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>}
               </div>
 
-              {car.price > 0 && <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                   Disponível para Orçamento
                 </span>
                 <span className="block text-2xl font-black tracking-tight text-white">
-                  {car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                  {formatVehiclePrice(car.price)}
                 </span>
                 <p className="mt-2 text-xs font-medium leading-5 text-slate-400">
                   Consulte as condições disponíveis com a equipe de atendimento.
                 </p>
-              </div>}
+              </div>
 
               {/* Quick Specs parameters */}
               <div className="grid grid-cols-2 gap-3 text-sm font-medium text-slate-200">
@@ -420,7 +422,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
 
                 <div className="grid grid-cols-2 gap-3">
                   <a href="#proposta-form" className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-center text-xs font-bold text-white transition hover:bg-white/10"><FileText className="h-4 w-4 text-red-400" /> Simular financiamento</a>
-                  <button type="button" onClick={handleShare} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-white transition hover:bg-white/10"><Share2 className="h-4 w-4 text-red-400" /> {shareStatus === 'copied' ? 'Link copiado' : shareStatus === 'unavailable' ? 'Copie pela barra' : 'Compartilhar'}</button>
+                  <button type="button" onClick={handleShare} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-white transition hover:bg-white/10"><Share2 className="h-4 w-4 text-red-400" /> {shareStatus === 'copied' ? 'Descrição copiada' : shareStatus === 'unavailable' ? 'Não disponível' : 'Compartilhar anúncio'}</button>
                 </div>
               </div>
             </div>
@@ -436,12 +438,16 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
           <div className="lg:col-span-8 space-y-8">
             
             {/* Description Card */}
-            {car.description && <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-4">
-              <h3 className="font-extrabold text-xl text-slate-900">Sobre este Veículo</h3>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                {car.description}
-              </p>
-            </div>}
+            <div className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[.16em] text-red-600">Apresentação comercial</p>
+                <h3 className="mt-2 text-xl font-extrabold text-slate-900">Destaques deste veículo</h3>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {vehicleCommercialLines(car).map(line => <p key={line} className="rounded-xl bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700">{line}</p>)}
+              </div>
+              {car.description && <p className="border-t border-slate-100 pt-5 text-sm leading-relaxed text-slate-600 whitespace-pre-line sm:text-base">{car.description}</p>}
+            </div>
 
             {/* Features (Itens de serie) */}
             {car.features.length > 0 && <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">

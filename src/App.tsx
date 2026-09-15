@@ -260,14 +260,16 @@ export default function App() {
       await addVehicle(newCar);
     } catch (err) {
       console.error('Error adding vehicle:', err);
+      throw err;
     }
   };
 
   const handleEditCar = async (updatedCar: Car) => {
     try {
-      const updated = await updateVehicle(updatedCar.id, updatedCar);
+      await updateVehicle(updatedCar.id, updatedCar);
     } catch (err) {
       console.error('Error updating vehicle:', err);
+      throw err;
     }
   };
 

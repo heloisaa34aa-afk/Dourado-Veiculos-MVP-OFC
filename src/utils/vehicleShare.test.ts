@@ -10,10 +10,18 @@ describe('shareVehicle', () => {
     expect(share).toHaveBeenCalledWith(payload);
   });
 
-  it('copia o link quando o compartilhamento nativo não está disponível', async () => {
+  it('copia a descrição completa e o link quando o compartilhamento nativo não está disponível', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     expect(await shareVehicle(payload, { clipboard: { writeText } })).toBe('copied');
-    expect(writeText).toHaveBeenCalledWith(payload.url);
+    expect(writeText).toHaveBeenCalledWith(`${payload.text}\n\n${payload.url}`);
+  });
+
+  it('remove o arquivo quando o navegador não aceita compartilhar a foto', async () => {
+    const file = new File(['foto'], 'carro.jpg', { type: 'image/jpeg' });
+    const share = vi.fn().mockResolvedValue(undefined);
+    const canShare = vi.fn().mockReturnValue(false);
+    expect(await shareVehicle({ ...payload, files: [file] }, { share, canShare })).toBe('shared');
+    expect(share).toHaveBeenCalledWith({ ...payload, files: undefined });
   });
 
   it('não copia quando o usuário cancela o compartilhamento nativo', async () => {

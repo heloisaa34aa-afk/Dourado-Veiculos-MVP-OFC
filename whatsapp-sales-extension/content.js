@@ -42,6 +42,52 @@ function insertDraft(text) {
   return { ok: true };
 }
 
+function findImageInput() {
+  return [...document.querySelectorAll('input[type="file"]')].find(input => {
+    const accept = (input.getAttribute('accept') || '').toLowerCase();
+    return accept.includes('image') && !input.hasAttribute('capture');
+  }) || null;
+}
+
+function attachmentTrigger() {
+  const scope = document.querySelector('#main footer') || document.querySelector('footer') || document;
+  const labelled = [...scope.querySelectorAll('button, [role="button"]')].find(element => {
+    const label = `${element.getAttribute('aria-label') || ''} ${element.getAttribute('title') || ''}`.toLocaleLowerCase('pt-BR');
+    return /(anexar|attach|adicionar)/.test(label);
+  });
+  if (labelled) return labelled;
+  const icon = scope.querySelector('[data-icon="plus-rounded"], [data-icon="plus"], [data-icon="clip"]');
+  return icon?.closest('button, [role="button"]') || null;
+}
+
+async function waitForImageInput() {
+  let input = findImageInput();
+  if (input) return input;
+  attachmentTrigger()?.click();
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    input = findImageInput();
+    if (input) return input;
+  }
+  return null;
+}
+
+async function attachImages(images) {
+  if (!findComposer()) return { ok: false, error: 'Abra uma conversa antes de anexar as fotos.' };
+  if (!Array.isArray(images) || !images.length) return { ok: false, error: 'Nenhuma foto foi preparada.' };
+  const input = await waitForImageInput();
+  if (!input) return { ok: false, error: 'Não encontrei o botão de fotos do WhatsApp. Use “Baixar fotos”.' };
+
+  const transfer = new DataTransfer();
+  for (const image of images) {
+    const blob = await fetch(image.dataUrl).then(response => response.blob());
+    transfer.items.add(new File([blob], image.name, { type: image.type || blob.type || 'image/jpeg' }));
+  }
+  input.files = transfer.files;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  return { ok: true, count: transfer.files.length };
+}
+
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message?.type === 'GET_CHAT_CONTEXT') {
     sendResponse({ ok: true, customerName: readCustomerName(), hasOpenChat: Boolean(findComposer()) });
@@ -50,5 +96,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
   if (message?.type === 'INSERT_DRAFT') {
     sendResponse(insertDraft(String(message.text || '')));
+    return;
+  }
+
+  if (message?.type === 'ATTACH_IMAGES') {
+    attachImages(message.images).then(sendResponse).catch(error => sendResponse({ ok: false, error: error?.message || 'Falha ao anexar fotos.' }));
+    return true;
   }
 });
