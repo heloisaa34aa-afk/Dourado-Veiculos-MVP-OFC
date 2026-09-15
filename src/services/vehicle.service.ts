@@ -22,7 +22,7 @@ export function mapDbToCar(v: any): Car {
     images = [v.cover_image];
   }
 
-  const categoryName = v.categories?.name || (typeof v.category === 'string' ? v.category : 'SUV');
+  const categoryName = v.categories?.name || (typeof v.category === 'string' ? v.category : '');
   const categoryUuid = v.category_id || v.categories?.id;
 
   return {
@@ -33,10 +33,10 @@ export function mapDbToCar(v: any): Car {
     price: Number(v.price || 0),
     year: v.year,
     km: Number(v.mileage || 0),
-    gearbox: v.transmission || 'Manual',
-    fuel: v.fuel || 'Flex',
-    color: v.color || 'Branco',
-    plateEnd: v.plate_final || '9',
+    gearbox: v.transmission || '',
+    fuel: v.fuel || '',
+    color: v.color || '',
+    plateEnd: v.plate_final || '',
     description: v.description || '',
     images: images,
     features: v.vehicle_features ? v.vehicle_features.map((f: any) => f.feature) : [],

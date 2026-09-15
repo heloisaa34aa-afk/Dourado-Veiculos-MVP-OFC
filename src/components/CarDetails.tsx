@@ -9,7 +9,7 @@ import {
   Check, Send, CheckCircle2, MapPin, Sparkles, MessageCircle,
   Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Info,
   X, Maximize2, ZoomIn, ZoomOut, AlertTriangle, XCircle,
-  ShieldCheck, FileText, ChevronDown, ChevronUp, Camera, AlertCircle
+  ShieldCheck, FileText, ChevronDown, ChevronUp, Camera, AlertCircle, Share2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Car, LeadMessage, } from '../types';
@@ -18,6 +18,8 @@ import { ClientPoiPanel } from './ClientPoiPanel';
 import { PublicPromotion } from './PublicPromotion';
 import type { SiteBanner } from '../services/banner.service';
 import { useSettings } from '../hooks/useSettings';
+import CarCard from './CarCard';
+import { shareVehicle } from '../utils/vehicleShare';
 
 const HOTSPOT_VISIBLE_RANGE = 2;
 
@@ -31,13 +33,30 @@ interface CarDetailsProps {
   onBack: () => void;
   onSubmitLead: (lead: Omit<LeadMessage, 'id' | 'createdAt' | 'status'>) => void;
   banners?: SiteBanner[];
+  relatedCars?: Car[];
+  onSelectCar?: (car: Car) => void;
 }
 
 
-export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: CarDetailsProps) {
+export default function CarDetails({ car, onBack, onSubmitLead, banners = [], relatedCars = [], onSelectCar }: CarDetailsProps) {
   const { settings: companySettings } = useSettings();
   const configuredWhatsapp = (companySettings?.whatsapp || companySettings?.phone || '').replace(/\D/g, '');
   const whatsappNumber = configuredWhatsapp && !configuredWhatsapp.startsWith('55') ? `55${configuredWhatsapp}` : configuredWhatsapp;
+  const vehicleName = [car.brand, car.model, car.version].filter(Boolean).join(' ');
+  const [shareStatus, setShareStatus] = useState<'idle' | 'copied' | 'unavailable'>('idle');
+  const similarCars = React.useMemo(() => relatedCars
+    .filter(candidate => candidate.id !== car.id && !candidate.isSold)
+    .sort((a, b) => {
+      const categoryDifference = Number(b.category === car.category) - Number(a.category === car.category);
+      if (categoryDifference !== 0) return categoryDifference;
+      if (car.price > 0) {
+        const distanceA = a.price > 0 ? Math.abs(a.price - car.price) : Number.POSITIVE_INFINITY;
+        const distanceB = b.price > 0 ? Math.abs(b.price - car.price) : Number.POSITIVE_INFINITY;
+        return distanceA - distanceB;
+      }
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    })
+    .slice(0, 4), [car.category, car.id, car.price, relatedCars]);
   type VehicleMediaItem = 
     | { id: 'vehicle-360'; type: '360'; thumbnail: string }
     | { id: string; type: 'image'; url: string; thumbnail: string; imageIndex: number };
@@ -187,12 +206,25 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
   const handleWhatsAppInquiry = () => {
     if (!whatsappNumber) return;
     const pageUrl = window.location.href;
-    const text = encodeURIComponent(`Olá Dourado Veículos! Vi o anúncio do ${car.brand} ${car.model} (${car.year}) e gostaria de mais informações. ${pageUrl}`);
+    const yearText = car.year ? ` ${car.year}` : '';
+    const text = encodeURIComponent(`Olá! Tenho interesse no ${vehicleName}${yearText} que vi no site da Dourado Veículos.\n\nVeja o veículo:\n${pageUrl}`);
     window.open(`https://wa.me/${whatsappNumber}?text=${text}`, '_blank');
   };
 
+  const handleShare = async () => {
+    const details = [vehicleName, car.year, car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : ''].filter(Boolean).join(' · ');
+    const result = await shareVehicle({ title: vehicleName, text: details, url: window.location.href });
+    if (result === 'copied') {
+      setShareStatus('copied');
+      window.setTimeout(() => setShareStatus('idle'), 2200);
+    } else if (result === 'unavailable') {
+      setShareStatus('unavailable');
+      window.setTimeout(() => setShareStatus('idle'), 2200);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#f3f4f6] pb-16">
+    <div className="min-h-screen bg-[#f3f4f6] pb-28 lg:pb-16">
       
       {/* Top Banner & Breadcrumb */}
       <div className="border-b border-white/10 bg-[#080a0e] py-4 text-white">
@@ -318,37 +350,35 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
               
               {/* Titles */}
               <div>
-                <span className="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">
-                  {car.category}
-                </span>
+                {car.category && <span className="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">{car.category}</span>}
                 <h1 className="mt-3 text-4xl font-black tracking-[-.045em] text-white">
                   {car.brand} {car.model}
                 </h1>
-                <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>
+                {car.version && <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>}
               </div>
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              {car.price > 0 && <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                 <span className="text-emerald-600 font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
                   Disponível para Orçamento
                 </span>
                 <span className="block text-2xl font-black tracking-tight text-white">
-                  {car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : 'Preço sob consulta'}
+                  {car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
                 </span>
                 <p className="mt-2 text-xs font-medium leading-5 text-slate-400">
                   Consulte as condições disponíveis com a equipe de atendimento.
                 </p>
-              </div>
+              </div>}
 
               {/* Quick Specs parameters */}
               <div className="grid grid-cols-2 gap-3 text-sm font-medium text-slate-200">
-                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
+                {car.year && <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Calendar className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Ano</span>
                     <span>{car.year}</span>
                   </div>
-                </div>
+                </div>}
                 <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Gauge className="w-4 h-4 text-red-500" />
                   <div>
@@ -356,24 +386,27 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                     <span>{car.km === 0 ? 'Zero km' : car.km.toLocaleString('pt-BR') + ' km'}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
+                {car.gearbox && <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Settings className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Câmbio</span>
                     <span>{car.gearbox}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
+                </div>}
+                {car.fuel && <div className="flex items-center gap-2.5 rounded-xl border border-white/10 bg-white/5 p-3">
                   <Fuel className="w-4 h-4 text-red-500" />
                   <div>
                     <span className="text-[10px] text-slate-400 block uppercase font-bold leading-none mb-0.5">Combustível</span>
                     <span>{car.fuel}</span>
                   </div>
-                </div>
+                </div>}
               </div>
 
               {/* Instant CTAs */}
               <div className="space-y-3 pt-2">
+                <a href="#proposta-form" className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-4 text-sm font-bold text-white shadow-md transition hover:bg-red-700">
+                  <Send className="h-5 w-5" /> Tenho interesse
+                </a>
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
@@ -382,15 +415,13 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                   className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
                 >
                   <MessageCircle className="w-5 h-5 fill-current" />
-                  <span>{whatsappNumber ? 'Negociar no WhatsApp' : 'WhatsApp não configurado'}</span>
+                  <span>{whatsappNumber ? 'Falar no WhatsApp' : 'WhatsApp não configurado'}</span>
                 </motion.button>
 
-                <a
-                  href="#proposta-form"
-                  className="w-full py-3.5 border-2 border-slate-200 hover:border-slate-800 text-slate-800 hover:text-slate-900 rounded-xl font-bold text-sm flex items-center justify-center transition-all cursor-pointer text-center bg-white"
-                >
-                  Enviar Proposta por E-mail
-                </a>
+                <div className="grid grid-cols-2 gap-3">
+                  <a href="#proposta-form" className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-center text-xs font-bold text-white transition hover:bg-white/10"><FileText className="h-4 w-4 text-red-400" /> Simular financiamento</a>
+                  <button type="button" onClick={handleShare} className="flex min-h-12 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-3 text-xs font-bold text-white transition hover:bg-white/10"><Share2 className="h-4 w-4 text-red-400" /> {shareStatus === 'copied' ? 'Link copiado' : shareStatus === 'unavailable' ? 'Copie pela barra' : 'Compartilhar'}</button>
+                </div>
               </div>
             </div>
           </div>
@@ -405,15 +436,15 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
           <div className="lg:col-span-8 space-y-8">
             
             {/* Description Card */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-4">
+            {car.description && <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-4">
               <h3 className="font-extrabold text-xl text-slate-900">Sobre este Veículo</h3>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed whitespace-pre-line">
                 {car.description}
               </p>
-            </div>
+            </div>}
 
             {/* Features (Itens de serie) */}
-            <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+            {car.features.length > 0 && <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
               <h3 className="font-extrabold text-xl text-slate-900">Itens de Série &amp; Acessórios</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {car.features.map((feature, idx) => (
@@ -425,26 +456,26 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                   </div>
                 ))}
               </div>
-            </div>
+            </div>}
           </div>
 
           {/* Right Column: Ficha tecnica & Proposal Form */}
           <div className="lg:col-span-4 space-y-8">
             
             {/* Technical spec card */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-5">
+            {(car.color || car.plateEnd) && <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-5">
               <h3 className="font-extrabold text-lg text-slate-900">Ficha Técnica</h3>
               <div className="space-y-3 text-xs sm:text-sm">
-                <div className="flex justify-between py-2 border-b border-slate-100">
+                {car.color && <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Cor</span>
                   <span className="font-bold text-slate-800">{car.color}</span>
-                </div>
-                <div className="flex justify-between py-2 border-b border-slate-100">
+                </div>}
+                {car.plateEnd && <div className="flex justify-between py-2 border-b border-slate-100">
                   <span className="text-slate-400 font-medium">Final da Placa</span>
                   <span className="font-bold text-slate-800">{car.plateEnd}</span>
-                </div>
+                </div>}
               </div>
-            </div>
+            </div>}
 
             {/* Lead contact proposal form */}
             <div id="proposta-form" className="bg-slate-900 text-white p-6 sm:p-8 rounded-2xl shadow-lg relative overflow-hidden">
@@ -540,7 +571,19 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
             <PublicPromotion banners={banners} placement="home_inline" />
           </section>
         )}
+
+        {similarCars.length > 0 && onSelectCar && <section aria-labelledby="similar-vehicles-title" className="space-y-6 border-t border-slate-200 pt-10">
+          <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Outras opções</p><h2 id="similar-vehicles-title" className="mt-1 text-3xl font-black tracking-tight text-slate-950">Você também pode gostar</h2></div>
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">{similarCars.map(similar => <CarCard key={similar.id} car={similar} onSelect={onSelectCar} />)}</div>
+        </section>}
       </div>
+
+      <nav aria-label="Ações do veículo" className="fixed inset-x-0 bottom-0 z-[80] grid grid-cols-4 border-t border-slate-200 bg-white/95 px-2 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2 shadow-[0_-10px_35px_rgba(15,23,42,.12)] backdrop-blur lg:hidden">
+        <a href="#proposta-form" className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-slate-700"><Send className="h-5 w-5 text-red-600" /> Interesse</a>
+        <button type="button" onClick={handleWhatsAppInquiry} disabled={!whatsappNumber} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-slate-700 disabled:text-slate-300"><MessageCircle className="h-5 w-5 text-emerald-600" /> WhatsApp</button>
+        <a href="#proposta-form" className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-slate-700"><FileText className="h-5 w-5 text-slate-700" /> Financiar</a>
+        <button type="button" onClick={handleShare} className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-bold text-slate-700"><Share2 className="h-5 w-5 text-slate-700" /> {shareStatus === 'copied' ? 'Copiado' : 'Compartilhar'}</button>
+      </nav>
 
       {/* FULLSCREEN LIGHTBOX WITH ZOOM & PAN */}
       <AnimatePresence>

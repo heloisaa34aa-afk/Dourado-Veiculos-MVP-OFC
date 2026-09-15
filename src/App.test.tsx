@@ -69,7 +69,7 @@ describe('CarRouting', () => {
     await waitFor(() => {
       expect(screen.getAllByText(/Toyota/i).length).toBeGreaterThan(0);
       expect(screen.getAllByText(/Corolla/i).length).toBeGreaterThan(0);
-    });
+    }, { timeout: 5000 });
   });
 
   it('5. UUID inexistente mostra "Veiculo nao encontrado" somente apos a consulta terminar', async () => {

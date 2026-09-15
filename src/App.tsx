@@ -731,7 +731,7 @@ export default function App() {
 
           <Route path="/veiculo/:vehicleId" element={
             <Suspense fallback={<RouteLoading label="Carregando detalhes do veículo..." />}>
-              <CarDetailsWrapper onSubmitLead={handleSubmitLead} banners={publicBanners} />
+              <CarDetailsWrapper cars={cars} onSubmitLead={handleSubmitLead} banners={publicBanners} />
             </Suspense>
           } />
 
@@ -855,7 +855,7 @@ function RouteLoading({ label, dark = false }: { label: string; dark?: boolean }
   );
 }
 
-function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banners: SiteBanner[] }) {
+function CarDetailsWrapper({ cars, onSubmitLead, banners }: { cars: Car[]; onSubmitLead: any; banners: SiteBanner[] }) {
   const { vehicleId } = useParams<{ vehicleId: string }>();
   const decodedVehicleId = vehicleId ? decodeURIComponent(vehicleId).trim() : null;
   const navigate = useNavigate();
@@ -913,6 +913,8 @@ function CarDetailsWrapper({ onSubmitLead, banners }: { onSubmitLead: any; banne
     <CarDetails 
       car={vehicle} 
       onBack={() => navigate('/estoque')}
+      relatedCars={cars}
+      onSelectCar={(selectedCar) => navigate(`/veiculo/${encodeURIComponent(selectedCar.id)}`)}
       onSubmitLead={onSubmitLead}
       banners={banners}
     />
