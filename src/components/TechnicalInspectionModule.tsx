@@ -3,22 +3,17 @@ import {
   CheckCircle2, AlertTriangle, XCircle, HelpCircle, 
   ChevronDown, ChevronUp, Camera, Upload, Trash2, 
   Check, X, Loader2, Save, FileText, Image as ImageIcon,
-  Sparkles, Printer
+  Sparkles
 } from 'lucide-react';
 import { VehicleInspectionItem, TechnicalInspectionStatus, InspectionCategory } from '../types';
 import { inspectionService, DEFAULT_INSPECTION_STRUCTURE } from '../services/inspectionService';
 
 interface TechnicalInspectionModuleProps {
   projectId: string; // vehicleId
-  vehicleTitle?: string;
   onInspectionChange?: (items: VehicleInspectionItem[]) => void;
 }
 
-const escapeHtml = (value: string) => value.replace(/[&<>'"]/g, character => ({
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
-}[character] || character));
-
-export default function TechnicalInspectionModule({ projectId, vehicleTitle = 'Veículo', onInspectionChange }: TechnicalInspectionModuleProps) {
+export default function TechnicalInspectionModule({ projectId, onInspectionChange }: TechnicalInspectionModuleProps) {
   const [items, setItems] = useState<VehicleInspectionItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -168,28 +163,6 @@ export default function TechnicalInspectionModule({ projectId, vehicleTitle = 'V
     return { ok, atencao, problema, naoAvaliado };
   }, [items]);
 
-  const handlePrintReport = () => {
-    const reportWindow = window.open('', '_blank');
-    if (!reportWindow) {
-      window.alert('O navegador bloqueou a janela do laudo. Libere pop-ups e tente novamente.');
-      return;
-    }
-    reportWindow.opener = null;
-
-    const rows = items.map(item => `
-      <tr>
-        <td>${escapeHtml(String(item.category))}</td>
-        <td><strong>${escapeHtml(item.itemName)}</strong></td>
-        <td class="status status-${escapeHtml(item.status.toLowerCase().replace(/\s+/g, '-'))}">${escapeHtml(item.status)}</td>
-        <td>${escapeHtml(item.notes || '—')}</td>
-      </tr>`).join('');
-
-    reportWindow.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Laudo - ${escapeHtml(vehicleTitle)}</title><style>
-      @page{size:A4;margin:14mm}*{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#0f172a;margin:0}header{border-bottom:3px solid #dc2626;padding-bottom:14px;margin-bottom:20px}.brand{font-size:12px;font-weight:800;letter-spacing:.18em;color:#dc2626;text-transform:uppercase}h1{font-size:24px;margin:6px 0}.meta{color:#64748b;font-size:12px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:18px 0}.summary div{border:1px solid #e2e8f0;border-radius:8px;padding:10px;text-align:center}.summary strong{display:block;font-size:20px}table{width:100%;border-collapse:collapse;font-size:11px}th{background:#0f172a;color:white;text-align:left;padding:9px}td{border-bottom:1px solid #e2e8f0;padding:8px;vertical-align:top}.status{font-weight:700}.status-ok{color:#059669}.status-atenção{color:#d97706}.status-problema{color:#dc2626}footer{margin-top:22px;border-top:1px solid #e2e8f0;padding-top:10px;color:#64748b;font-size:10px}.actions{margin:0 0 18px}.actions button{background:#dc2626;color:#fff;border:0;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer}@media print{.actions{display:none}}
-    </style></head><body><div class="actions"><button onclick="window.print()">Salvar / imprimir PDF</button></div><header><div class="brand">Dourado Veículos</div><h1>Laudo de inspeção</h1><div class="meta">${escapeHtml(vehicleTitle)} · Emitido em ${new Date().toLocaleString('pt-BR')}</div></header><section class="summary"><div><strong>${percentage}%</strong>Avaliado</div><div><strong>${statusCounts.ok}</strong>OK</div><div><strong>${statusCounts.atencao}</strong>Atenção</div><div><strong>${statusCounts.problema}</strong>Problema</div></section><table><thead><tr><th>Área</th><th>Item</th><th>Estado</th><th>Observações</th></tr></thead><tbody>${rows}</tbody></table><footer>Documento gerado a partir da inspeção cadastrada no sistema. As informações refletem o estado registrado no momento da emissão.</footer></body></html>`);
-    reportWindow.document.close();
-  };
-
   if (loading) {
     return (
       <div className="py-12 flex flex-col items-center justify-center space-y-3">
@@ -213,17 +186,12 @@ export default function TechnicalInspectionModule({ projectId, vehicleTitle = 'V
               Avaliação de conformidade e integridade física do veículo
             </p>
           </div>
-          <div className="flex items-center gap-3 text-right">
-            <button type="button" onClick={handlePrintReport} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 text-xs font-bold text-white hover:border-red-500 hover:bg-red-600">
-              <Printer className="h-4 w-4" /> Gerar PDF
-            </button>
-            <div>
+          <div className="text-right">
             <div className="text-2xl font-black text-white tracking-tight">
               {percentage}%
             </div>
             <div className="text-[11px] font-bold text-slate-400">
               {evaluatedItems} de {totalItems} itens avaliados
-            </div>
             </div>
           </div>
         </div>

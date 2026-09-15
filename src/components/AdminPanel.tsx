@@ -24,7 +24,6 @@ import { useCategories } from '../hooks/useCategories';
 import { BannerManager } from './BannerManager';
 import { SalesChatInsights } from './SalesChatInsights';
 import { adminUsersService } from '../services/adminUsers.service';
-import TechnicalInspectionModule from './TechnicalInspectionModule';
 import { COMMON_VEHICLE_FEATURES, VEHICLE_FEATURE_GROUPS } from '../config/vehicleFeaturePresets';
 
 const trackingLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_TRACKING_LAB === 'true';
@@ -77,7 +76,7 @@ export default function AdminPanel({
   const [editingCar, setEditingCar] = useState<CarType | null>(null);
 
   // Modal active sub-tab for Edit dialog
-  const [modalTab, setModalTab] = useState<'specs' | 'media' | 'inspection'>('specs');
+  const [modalTab, setModalTab] = useState<'specs' | 'media'>('specs');
   const [newCarId, setNewCarId] = useState('');
 
   // Media management form states
@@ -1526,17 +1525,6 @@ export default function AdminPanel({
                 >
                   Mídias do Veículo
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setModalTab('inspection')}
-                  disabled={!editingCar}
-                  title={!editingCar ? 'Salve o veículo antes de preencher o laudo' : undefined}
-                  className={`px-4 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
-                    modalTab === 'inspection' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  Laudo
-                </button>
               </div>
 
               {/* Modal scrollable body form */}
@@ -1878,7 +1866,7 @@ export default function AdminPanel({
                       </div>
                     </div>
                   </>
-                ) : modalTab === 'media' ? (
+                ) : (
                   /* TAB: MÍDIAS DO VEÍCULO */
                   <div className="space-y-8">
                     
@@ -2310,14 +2298,6 @@ export default function AdminPanel({
                       </div>
                     )}
 
-                  </div>
-                ) : (
-                  <div className="space-y-5">
-                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                      <h5 className="text-sm font-bold text-slate-900">Laudo de inspeção do veículo</h5>
-                      <p className="mt-1 text-xs text-slate-500">Avalie os itens, anexe evidências e use “Gerar PDF” para salvar ou imprimir o laudo.</p>
-                    </div>
-                    {editingCar && <TechnicalInspectionModule projectId={editingCar.id} vehicleTitle={`${editingCar.brand} ${editingCar.model} ${editingCar.version}`} />}
                   </div>
                 )}
 
