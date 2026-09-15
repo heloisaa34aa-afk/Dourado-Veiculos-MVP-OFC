@@ -776,16 +776,16 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   return (
     <div ref={workspaceRef} className="fixed inset-0 z-[100] flex flex-col bg-gray-950 h-[100dvh]">
       <div className="min-h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 shadow-sm shrink-0">
-          <div className="flex items-center gap-4 shrink-0">
-            <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
-              <ArrowLeft size={20} /> Voltar aos veículos
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:gap-4">
+            <button onClick={onBack} className="flex min-h-11 shrink-0 items-center gap-2 rounded-xl px-2 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100 sm:px-3">
+              <ArrowLeft size={20} /><span className="sm:hidden">Voltar</span><span className="hidden sm:inline">Voltar aos veículos</span>
             </button>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <div className="min-w-0">
+              <h1 className="flex items-center gap-2 truncate text-lg font-bold text-gray-900">
                 <CarIcon size={20} className="text-indigo-600" />
-                {car.brand} {car.model}
+                <span className="truncate">{car.brand} {car.model}</span>
               </h1>
-              <div className="text-xs font-medium text-gray-500">Editando visão {viewType === 'exterior' ? 'externa' : 'interna'} • {car.plateEnd} • {totalFrames} frames</div>
+              <div className="truncate text-xs font-medium text-gray-500">Editando visão {viewType === 'exterior' ? 'externa' : 'interna'} • {car.plateEnd} • {totalFrames} frames</div>
             </div>
           </div>
           <div className="order-3 flex w-full shrink-0 items-center justify-center gap-1 rounded-lg bg-gray-100 p-1 sm:order-none sm:mx-4 sm:w-auto" aria-label="Tipo de visualização 360">
@@ -811,8 +811,8 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
           </div>
       </div>
       
-      <div className="flex-1 flex flex-col md:flex-row min-h-0 relative">
-         <div className="flex-1 flex flex-col min-w-0 bg-gray-950 relative">
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-y-auto md:flex-row md:overflow-hidden">
+         <div className={`relative flex min-w-0 shrink-0 flex-col bg-gray-950 md:h-auto md:flex-1 ${panelOpen ? 'h-[48dvh] min-h-[320px]' : 'h-full min-h-0'}`}>
             <div className="absolute top-4 right-4 z-30 flex items-center gap-2">
               <button 
                 onClick={() => setPanelOpen(!panelOpen)}
@@ -913,7 +913,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
          
          {/* Right Panel */}
          <div 
-            className={`absolute md:static top-0 right-0 h-full w-[300px] sm:w-[360px] bg-white border-l border-gray-200 flex flex-col shadow-2xl z-40 transition-transform duration-300 ${panelOpen ? 'translate-x-0' : 'translate-x-full md:hidden'}`}
+            className={`relative z-40 flex min-h-[52dvh] w-full shrink-0 flex-col border-t border-gray-200 bg-white shadow-2xl md:static md:h-full md:min-h-0 md:w-[360px] md:border-l md:border-t-0 ${panelOpen ? 'flex' : 'hidden'}`}
             style={{ display: panelOpen ? 'flex' : 'none' }}
          >
              {renderRightPanel()}

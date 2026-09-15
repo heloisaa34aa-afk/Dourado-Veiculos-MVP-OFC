@@ -108,10 +108,10 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openPoiModal(h); }}
-          className="pointer-events-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 sm:h-10 sm:w-10 sm:shadow-xl"
+          className="pointer-events-auto relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-white bg-blue-600 text-white shadow-md transition-transform before:absolute before:-inset-2 before:content-[''] hover:scale-110 sm:h-10 sm:w-10 sm:border-2 sm:shadow-xl"
           aria-label={h.title}
         >
-          <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <Info className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
       )
     })),
@@ -123,10 +123,10 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openDamageModal(d); }}
-          className="pointer-events-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-600 text-white shadow-lg transition-transform hover:scale-110 sm:h-10 sm:w-10 sm:shadow-xl"
+          className="pointer-events-auto relative flex h-6 w-6 cursor-pointer items-center justify-center rounded-full border border-white bg-red-600 text-white shadow-md transition-transform before:absolute before:-inset-2 before:content-[''] hover:scale-110 sm:h-10 sm:w-10 sm:border-2 sm:shadow-xl"
           aria-label={d.title}
         >
-          <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
         </button>
       )
     }))

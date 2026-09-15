@@ -881,8 +881,55 @@ export default function AdminPanel({
               </div>
             </div>
 
-            {/* Main Vehicles Table */}
-            <div className="overflow-x-auto">
+            {/* Mobile vehicle cards keep every action visible without horizontal scrolling. */}
+            <div className="divide-y divide-slate-100 md:hidden">
+              {filteredCars.length === 0 ? (
+                <div className="px-5 py-12 text-center text-sm text-slate-400">
+                  Nenhum veículo encontrado com os filtros atuais.
+                </div>
+              ) : filteredCars.map((car) => (
+                <article key={car.id} className="space-y-4 p-4">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <img
+                      src={car.images[0] || 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=800'}
+                      alt={car.model}
+                      className="h-20 w-28 shrink-0 rounded-xl border border-slate-200 object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="break-words text-base font-extrabold leading-tight text-slate-900">{car.brand} {car.model}</h3>
+                      {car.version && <p className="mt-1 break-words text-xs text-slate-500">{car.version}</p>}
+                      <strong className={`mt-2 block text-base ${car.price > 0 ? 'text-slate-900' : 'text-amber-600'}`}>
+                        {car.price > 0 ? car.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }) : 'Preço pendente'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <dl className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-50 p-3 text-sm">
+                    <div><dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Ano</dt><dd className="mt-0.5 font-semibold text-slate-800">{car.year || 'Não informado'}</dd></div>
+                    <div><dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Quilometragem</dt><dd className="mt-0.5 font-semibold text-slate-800">{car.km === 0 ? 'Zero KM' : `${car.km.toLocaleString('pt-BR')} km`}</dd></div>
+                    <div><dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Categoria</dt><dd className="mt-0.5 font-semibold text-slate-800">{car.category || 'Não informada'}</dd></div>
+                    <div><dt className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Câmbio</dt><dd className="mt-0.5 font-semibold text-slate-800">{car.gearbox || 'Não informado'}</dd></div>
+                  </dl>
+
+                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-2">
+                    <button
+                      onClick={() => onEditCar({ ...car, isSold: !car.isSold })}
+                      className={`min-h-11 rounded-xl px-3 text-xs font-bold uppercase ${car.isSold ? 'bg-slate-100 text-slate-600' : 'bg-emerald-50 text-emerald-700'}`}
+                    >
+                      {car.isSold ? 'Vendido' : 'Disponível'}
+                    </button>
+                    <button onClick={() => handleOpenModal(car)} className="grid h-11 w-11 place-items-center rounded-xl bg-slate-100 text-slate-700" aria-label={`Editar ${car.brand} ${car.model}`}><Edit2 className="h-4 w-4" /></button>
+                    <button onClick={() => handleDeleteVehicle(car)} disabled={deletingVehicleId !== null} className="grid h-11 w-11 place-items-center rounded-xl bg-red-50 text-red-600 disabled:opacity-50" aria-label={`Excluir ${car.brand} ${car.model}`}>
+                      {deletingVehicleId === car.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Desktop vehicles table */}
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold text-xs uppercase tracking-wider">
