@@ -122,6 +122,12 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   const [createError, setCreateError] = useState<string | null>(null);
   const [showMobileModal, setShowMobileModal] = useState(false);
 
+  useEffect(() => {
+    if ((project?.frames?.length || 0) >= 2) {
+      void trackingProvider.warmup();
+    }
+  }, [project?.id, project?.frames?.length]);
+
   const handleCreateProject = async () => {
     try {
       setIsCreating(true);
@@ -666,11 +672,13 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
               Escolha a peça, abra um frame em que ela esteja visível e marque apenas uma vez.
             </p>
             <div className="space-y-3">
-              {VEHICLE_PART_PRESET_GROUPS.map((group) => (
+              {VEHICLE_PART_PRESET_GROUPS.filter((group) =>
+                VEHICLE_PART_PRESETS.some((preset) => preset.group === group && preset.viewTypes.includes(viewType))
+              ).map((group) => (
                 <div key={group}>
                   <div className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-indigo-500">{group}</div>
                   <div className="grid grid-cols-2 gap-1.5">
-                    {VEHICLE_PART_PRESETS.filter((preset) => preset.group === group).map((preset) => (
+                    {VEHICLE_PART_PRESETS.filter((preset) => preset.group === group && preset.viewTypes.includes(viewType)).map((preset) => (
                       <button
                         key={preset.id}
                         type="button"

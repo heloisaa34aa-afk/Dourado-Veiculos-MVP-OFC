@@ -1,5 +1,8 @@
 import os
 import modal
+from concurrent.futures import ThreadPoolExecutor
+from collections import OrderedDict
+import hashlib
 
 image = (
     modal.Image.debian_slim(python_version="3.10")
@@ -43,36 +46,34 @@ def preprocess_frames(frames):
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
 
+def _download_image(url):
+    resp = requests.get(url, timeout=15, stream=True)
+    resp.raise_for_status()
+    content = b""
+    for chunk in resp.iter_content(chunk_size=65536):
+        content += chunk
+        if len(content) > MAX_FILE_SIZE:
+            raise ValueError("Imagem excede o limite de 5MB.")
+    try:
+        img = Image.open(BytesIO(content))
+        img.verify()
+        return Image.open(BytesIO(content)).convert('RGB')
+    except Exception as exc:
+        raise ValueError("O arquivo não é uma imagem válida.") from exc
+
 def load_video(urls):
-    if len(urls) < 2 or len(urls) > 48:
-        raise ValueError(f"Quantidade de frames inválida: {len(urls)}. Exigido entre 2 e 48.")
+    if len(urls) < 2 or len(urls) > 96:
+        raise ValueError(f"Quantidade de frames inválida: {len(urls)}. Exigido entre 2 e 96.")
         
-    images = []
-    original_size = None
-    for url in urls:
-        resp = requests.get(url, timeout=10, stream=True)
-        resp.raise_for_status()
-        
-        # Check size and validate it's an image
-        content = b""
-        for chunk in resp.iter_content(chunk_size=8192):
-            content += chunk
-            if len(content) > MAX_FILE_SIZE:
-                raise ValueError("Imagem excede o limite de 5MB.")
-                
-        try:
-            img = Image.open(BytesIO(content))
-            img.verify() # verify it's an image
-            img = Image.open(BytesIO(content)).convert('RGB')
-        except Exception:
-            raise ValueError("O arquivo não é uma imagem válida.")
-            
-        if original_size is None:
-            original_size = img.size # (W, H)
-            
-        # Resize to 512x512 for inference
-        img = img.resize((512, 512), Image.Resampling.BILINEAR)
-        images.append(np.array(img))
+    worker_count = min(8, len(urls))
+    with ThreadPoolExecutor(max_workers=worker_count) as executor:
+        downloaded = list(executor.map(_download_image, urls))
+
+    original_size = downloaded[0].size
+    images = [
+        np.array(img.resize((512, 512), Image.Resampling.BILINEAR))
+        for img in downloaded
+    ]
     
     return np.stack(images), original_size
 
@@ -117,13 +118,27 @@ class Tracker:
         self.model.load_state_dict(torch.load('/checkpoints/bootstapir_checkpoint_v2.pt', map_location=self.device))
         self.model = self.model.to(self.device)
         self.model.eval()
+        self.video_cache = OrderedDict()
         print("Model loaded.")
+
+    @modal.method()
+    def warmup(self):
+        return {"status": "ready"}
 
     @modal.method()
     def track(self, req: dict):
         print(f"Tracking {len(req['frames'])} frames...")
         try:
-            video, (orig_w, orig_h) = load_video(req['frames'])
+            cache_key = hashlib.sha256("\n".join(req['frames']).encode()).hexdigest()
+            cached = self.video_cache.get(cache_key)
+            if cached is None:
+                cached = load_video(req['frames'])
+                self.video_cache[cache_key] = cached
+                while len(self.video_cache) > 2:
+                    self.video_cache.popitem(last=False)
+            else:
+                self.video_cache.move_to_end(cache_key)
+            video, (orig_w, orig_h) = cached
         except Exception as e:
             raise Exception(f"Failed to load images: {str(e)}")
 
@@ -263,6 +278,11 @@ def fastapi_app():
     @web_app.get("/health")
     def health_check():
         return {"status": "ok", "service": "Tracking Lab MVP"}
+
+    @web_app.post("/warmup")
+    def warmup_endpoint():
+        Tracker().warmup.spawn()
+        return {"status": "warming"}
 
     @web_app.post("/track")
     def track_endpoint(req: TrackingRequest):

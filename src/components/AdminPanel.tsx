@@ -24,6 +24,8 @@ import { useCategories } from '../hooks/useCategories';
 import { BannerManager } from './BannerManager';
 import { SalesChatInsights } from './SalesChatInsights';
 import { adminUsersService } from '../services/adminUsers.service';
+import TechnicalInspectionModule from './TechnicalInspectionModule';
+import { COMMON_VEHICLE_FEATURES, VEHICLE_FEATURE_GROUPS } from '../config/vehicleFeaturePresets';
 
 const trackingLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_TRACKING_LAB === 'true';
 
@@ -75,7 +77,7 @@ export default function AdminPanel({
   const [editingCar, setEditingCar] = useState<CarType | null>(null);
 
   // Modal active sub-tab for Edit dialog
-  const [modalTab, setModalTab] = useState<'specs' | 'media'>('specs');
+  const [modalTab, setModalTab] = useState<'specs' | 'media' | 'inspection'>('specs');
   const [newCarId, setNewCarId] = useState('');
 
   // Media management form states
@@ -142,6 +144,18 @@ export default function AdminPanel({
   const [formIsSold, setFormIsSold] = useState(false);
   const [formImagesText, setFormImagesText] = useState(''); // Textarea with image URLs (one per line)
   const [formFeaturesText, setFormFeaturesText] = useState(''); // comma-separated features
+
+  const selectedFeatures = useMemo(
+    () => formFeaturesText.split(',').map(feature => feature.trim()).filter(Boolean),
+    [formFeaturesText],
+  );
+
+  const toggleVehicleFeature = (feature: string) => {
+    const next = selectedFeatures.includes(feature)
+      ? selectedFeatures.filter(item => item !== feature)
+      : [...selectedFeatures, feature];
+    setFormFeaturesText(next.join(', '));
+  };
 
   // Load only the data required by the active administrative surface.
   useEffect(() => {
@@ -1512,6 +1526,17 @@ export default function AdminPanel({
                 >
                   Mídias do Veículo
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab('inspection')}
+                  disabled={!editingCar}
+                  title={!editingCar ? 'Salve o veículo antes de preencher o laudo' : undefined}
+                  className={`px-4 py-3 text-sm font-bold border-b-2 transition-all cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ${
+                    modalTab === 'inspection' ? 'border-red-600 text-red-600' : 'border-transparent text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  Laudo
+                </button>
               </div>
 
               {/* Modal scrollable body form */}
@@ -1711,6 +1736,31 @@ export default function AdminPanel({
                           <span>Opcionais e Itens de Série</span>
                           <span className="text-[10px] text-slate-400">Clique para remover ou digite e pressione Enter para adicionar</span>
                         </label>
+
+                        <div className="mb-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-extrabold uppercase tracking-wider text-slate-700">Seleção rápida</p>
+                            <div className="flex gap-2">
+                              <button type="button" onClick={() => setFormFeaturesText(Array.from(new Set([...selectedFeatures, ...COMMON_VEHICLE_FEATURES])).join(', '))} className="rounded-lg bg-slate-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-red-600">Marcar mais usados</button>
+                              <button type="button" onClick={() => setFormFeaturesText('')} className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 hover:bg-slate-100">Limpar</button>
+                            </div>
+                          </div>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {VEHICLE_FEATURE_GROUPS.map(group => (
+                              <fieldset key={group.label}>
+                                <legend className="mb-2 text-[11px] font-black uppercase tracking-wide text-red-600">{group.label}</legend>
+                                <div className="grid gap-1.5">
+                                  {group.items.map(feature => (
+                                    <label key={feature} className="flex min-h-8 cursor-pointer items-center gap-2 rounded-lg px-2 text-xs font-semibold text-slate-700 hover:bg-white">
+                                      <input type="checkbox" checked={selectedFeatures.includes(feature)} onChange={() => toggleVehicleFeature(feature)} className="h-4 w-4 rounded border-slate-300 text-red-600 focus:ring-red-500" />
+                                      {feature}
+                                    </label>
+                                  ))}
+                                </div>
+                              </fieldset>
+                            ))}
+                          </div>
+                        </div>
                         
                         {/* Tags container */}
                         <div className="flex flex-wrap gap-2 mb-3 p-3 bg-slate-50 border border-slate-200 rounded-xl min-h-[50px]">
@@ -1828,7 +1878,7 @@ export default function AdminPanel({
                       </div>
                     </div>
                   </>
-                ) : (
+                ) : modalTab === 'media' ? (
                   /* TAB: MÍDIAS DO VEÍCULO */
                   <div className="space-y-8">
                     
@@ -2260,6 +2310,14 @@ export default function AdminPanel({
                       </div>
                     )}
 
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                      <h5 className="text-sm font-bold text-slate-900">Laudo de inspeção do veículo</h5>
+                      <p className="mt-1 text-xs text-slate-500">Avalie os itens, anexe evidências e use “Gerar PDF” para salvar ou imprimir o laudo.</p>
+                    </div>
+                    {editingCar && <TechnicalInspectionModule projectId={editingCar.id} vehicleTitle={`${editingCar.brand} ${editingCar.model} ${editingCar.version}`} />}
                   </div>
                 )}
 

@@ -36,15 +36,24 @@ export interface TrackingResult {
 
 export interface MarkerTrackingProvider {
   track(request: TrackingRequest): Promise<TrackingResult>;
+  warmup(): Promise<void>;
 }
 
 export const trackingProvider: MarkerTrackingProvider = {
+  async warmup(): Promise<void> {
+    const endpoint = getTrackingEndpoint();
+    try {
+      await fetch(`${endpoint}/warmup`, { method: 'POST' });
+    } catch {
+      // O aquecimento é apenas uma otimização; o rastreio continua disponível.
+    }
+  },
   async track(request: TrackingRequest): Promise<TrackingResult> {
     const endpoint = getTrackingEndpoint();
     
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
       
       const response = await fetch(`${endpoint}/track`, {
         method: 'POST',
