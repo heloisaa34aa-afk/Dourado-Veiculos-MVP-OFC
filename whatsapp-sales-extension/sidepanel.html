@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dourado Vendas</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-mark">D</div>
+      <div><strong>Dourado Vendas</strong><span>Assistente do vendedor</span></div>
+      <button id="refreshButton" class="icon-button" type="button" title="Atualizar estoque" aria-label="Atualizar estoque">↻</button>
+    </header>
+
+    <main>
+      <section id="chatContext" class="context-card">
+        <span class="status-dot"></span>
+        <div><small>Conversa atual</small><strong id="customerName">Abra uma conversa</strong></div>
+      </section>
+
+      <section class="search-section">
+        <label for="searchInput">Buscar no estoque</label>
+        <input id="searchInput" type="search" placeholder="Ex.: Hilux, SUV, automático..." autocomplete="off" />
+        <div id="inventoryStatus" class="inventory-status">Carregando estoque...</div>
+      </section>
+
+      <section id="vehicleList" class="vehicle-list" aria-live="polite"></section>
+
+      <section id="composerPanel" class="composer-panel" hidden>
+        <div class="composer-title">
+          <div><small>Veículo selecionado</small><strong id="selectedVehicleTitle"></strong></div>
+          <button id="closeComposer" type="button" aria-label="Fechar">×</button>
+        </div>
+
+        <label for="templateSelect">Objetivo da mensagem</label>
+        <select id="templateSelect">
+          <option value="details">Enviar detalhes</option>
+          <option value="availability">Confirmar disponibilidade</option>
+          <option value="financing">Simular financiamento</option>
+          <option value="tradein">Receber veículo na troca</option>
+        </select>
+
+        <label for="messageDraft">Mensagem para revisar</label>
+        <textarea id="messageDraft" rows="11"></textarea>
+
+        <div class="actions">
+          <button id="copyButton" class="secondary" type="button">Copiar</button>
+          <button id="insertButton" class="primary" type="button">Inserir na conversa</button>
+        </div>
+        <p class="notice">A mensagem será inserida como rascunho. Revise e envie manualmente.</p>
+      </section>
+
+      <details class="settings-panel">
+        <summary>Configuração da integração</summary>
+        <label for="siteUrl">Endereço do site</label>
+        <input id="siteUrl" type="url" />
+        <label for="supabaseUrl">URL do Supabase</label>
+        <input id="supabaseUrl" type="url" />
+        <label for="supabaseAnonKey">Chave pública do Supabase</label>
+        <input id="supabaseAnonKey" type="password" />
+        <button id="saveSettings" class="secondary full" type="button">Salvar configuração</button>
+      </details>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="sidepanel.js"></script>
+  </body>
+</html>

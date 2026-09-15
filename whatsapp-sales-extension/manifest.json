@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "Dourado Vendas no WhatsApp",
+  "description": "Consulta o estoque da Dourado Veículos e prepara mensagens para atendimento no WhatsApp Web.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "permissions": ["sidePanel", "storage", "tabs", "activeTab"],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://nzvwlyxbbnsillmylwtj.supabase.co/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Abrir assistente Dourado"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}
