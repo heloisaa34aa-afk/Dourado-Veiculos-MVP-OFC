@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "Dourado Veículos",
+  "short_name": "Dourado",
+  "description": "Estoque e atendimento da Dourado Veículos.",
+  "lang": "pt-BR",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080a0e",
+  "theme_color": "#080a0e",
+  "icons": [
+    { "src": "/app-icon-192.svg", "sizes": "192x192", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/app-icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "any maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Ver estoque", "short_name": "Estoque", "url": "/estoque" },
+    { "name": "Área do cliente", "short_name": "Cliente", "url": "/cliente" }
+  ]
+}
