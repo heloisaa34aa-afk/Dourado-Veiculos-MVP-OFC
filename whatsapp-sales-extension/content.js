@@ -43,20 +43,17 @@ function insertDraft(text) {
 }
 
 function findImageInput() {
-  const candidates = [...document.querySelectorAll('input[type="file"]')].filter(input => {
+  return [...document.querySelectorAll('input[type="file"]')].find(input => {
     const accept = (input.getAttribute('accept') || '').toLowerCase();
     return accept.includes('image')
-      && input.multiple
+      && accept.includes('video')
       && !input.hasAttribute('capture')
       && accept !== 'image/webp';
-  });
-  return candidates.find(input => (input.getAttribute('accept') || '').toLowerCase().includes('video'))
-    || candidates[0]
-    || null;
+  }) || null;
 }
 
 function attachmentTrigger() {
-  const scope = document.querySelector('#main footer') || document.querySelector('footer') || document;
+  const scope = document.querySelector('#main footer') || document.querySelector('footer') || document.querySelector('#main') || document;
   const labelled = [...scope.querySelectorAll('button, [role="button"]')].find(element => {
     const label = `${element.getAttribute('aria-label') || ''} ${element.getAttribute('title') || ''}`.toLocaleLowerCase('pt-BR');
     return /(anexar|attach|adicionar)/.test(label);
@@ -79,16 +76,29 @@ async function waitForImageInput() {
 }
 
 async function attachImages(images) {
-  if (!findComposer()) return { ok: false, error: 'Abra uma conversa antes de anexar as fotos.' };
+  const composer = findComposer();
+  if (!composer) return { ok: false, error: 'Abra uma conversa antes de anexar as fotos.' };
   if (!Array.isArray(images) || !images.length) return { ok: false, error: 'Nenhuma foto foi preparada.' };
-  const input = await waitForImageInput();
-  if (!input) return { ok: false, error: 'Não encontrei o botão de fotos do WhatsApp. Use “Baixar fotos”.' };
 
   const transfer = new DataTransfer();
   for (const image of images) {
     const blob = await fetch(image.dataUrl).then(response => response.blob());
     transfer.items.add(new File([blob], image.name, { type: image.type || blob.type || 'image/jpeg' }));
   }
+
+  const input = await waitForImageInput();
+  if (!input) {
+    composer.focus();
+    const pasteHandled = !composer.dispatchEvent(new ClipboardEvent('paste', {
+      bubbles: true,
+      cancelable: true,
+      clipboardData: transfer,
+    }));
+    if (pasteHandled) return { ok: true, count: transfer.files.length, method: 'paste' };
+    return { ok: false, error: 'O WhatsApp mudou o seletor de fotos. Use “Baixar fotos” enquanto atualizamos a integração.' };
+  }
+
+  input.multiple = true;
   input.files = transfer.files;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
