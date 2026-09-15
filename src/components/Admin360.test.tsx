@@ -95,8 +95,9 @@ describe('Admin360Module', () => {
       updateDamageMarker: vi.fn(), deleteDamageMarker: vi.fn(),
     } as any);
 
-    render(<Admin360Module cars={mockCars} />);
+    const { container } = render(<Admin360Module cars={mockCars} />);
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'car-1' } });
+    expect(container.querySelector('.fixed.inset-0')?.className).toContain('z-[100]');
     expect(screen.getByRole('button', { name: /Voltar aos veículos/i })).toBeDefined();
     const internalButton = screen.getByRole('button', { name: '360° Interno' });
     expect(internalButton).toBeDefined();

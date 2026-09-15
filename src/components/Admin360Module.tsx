@@ -137,7 +137,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex h-[100dvh] flex-col bg-gray-50">
+      <div className="fixed inset-0 z-[100] flex h-[100dvh] flex-col bg-gray-50">
         <div className="flex min-h-16 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-gray-200 bg-white px-3 py-2 shadow-sm sm:px-6">
           <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-700 transition-colors hover:bg-gray-100">
             <ArrowLeft size={20} /> Voltar aos veículos
@@ -156,7 +156,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   // We'll just show the create button if no project
   if (!project) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-gray-50 h-[100dvh]">
+      <div className="fixed inset-0 z-[100] flex flex-col bg-gray-50 h-[100dvh]">
         <div className="min-h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 px-4 py-2 sm:px-6 shadow-sm shrink-0">
           <div className="flex items-center gap-4">
             <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
@@ -766,7 +766,7 @@ function Vehicle360Workspace({ vehicleId, car, viewType, onViewTypeChange, onBac
   };
 
   return (
-    <div ref={workspaceRef} className="fixed inset-0 z-50 flex flex-col bg-gray-950 h-[100dvh]">
+    <div ref={workspaceRef} className="fixed inset-0 z-[100] flex flex-col bg-gray-950 h-[100dvh]">
       <div className="min-h-16 bg-white border-b border-gray-200 flex flex-wrap items-center justify-between gap-2 px-3 py-2 sm:px-6 shadow-sm shrink-0">
           <div className="flex items-center gap-4 shrink-0">
             <button onClick={onBack} className="flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-bold text-gray-600 transition-colors hover:bg-gray-100">
