@@ -223,7 +223,16 @@ function renderMessageSequence() {
     const textarea = document.createElement('textarea');
     textarea.value = message;
     textarea.rows = message.includes('http') ? 3 : 4;
+    textarea.title = 'Clique para copiar esta mensagem';
     textarea.addEventListener('input', () => { state.messages[index] = textarea.value; });
+    textarea.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(textarea.value);
+        showToast(`Mensagem ${index + 1} copiada.`);
+      } catch {
+        showToast('Não foi possível copiar esta mensagem.');
+      }
+    });
     textarea.addEventListener('focus', () => {
       state.currentMessage = index;
       elements.sequenceProgress.textContent = `${index + 1} de ${state.messages.length}`;

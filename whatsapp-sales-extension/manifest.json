@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Dourado Vendas no WhatsApp",
   "description": "Consulta o estoque da Dourado Veículos e prepara mensagens para atendimento no WhatsApp Web.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "minimum_chrome_version": "116",
   "permissions": ["sidePanel", "storage", "tabs", "activeTab", "clipboardWrite", "downloads"],
   "host_permissions": [

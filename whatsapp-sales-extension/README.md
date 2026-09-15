@@ -12,7 +12,7 @@ Extensão Chrome Manifest V3 que abre um painel lateral no WhatsApp Web, consult
 - mantém a cópia individual e oferece o download das fotos como alternativa;
 - abre vídeos cadastrados para o vendedor compartilhar quando disponíveis;
 - reconhece o nome exibido na conversa quando o WhatsApp disponibiliza essa informação;
-- copia ou insere cada mensagem separadamente como rascunho no campo da conversa;
+- copia a mensagem imediatamente ao clicar em sua caixa ou insere cada item separadamente como rascunho;
 - nunca envia automaticamente.
 
 ## Instalação local no Chrome
@@ -32,6 +32,6 @@ O MVP já utiliza o projeto Supabase e o domínio público atuais. A configuraç
 
 A estrutura do WhatsApp Web pode mudar. Por isso a extensão procura o editor por atributos semânticos e não dispara `Enter`. Se o WhatsApp alterar o campo de mensagem, atualize `findComposer()` em `content.js`.
 
-O anexo múltiplo prepara as imagens e aciona o seletor de mídia do WhatsApp Web, mas nunca confirma o envio. Se a interface do WhatsApp mudar, use **Baixar fotos** e selecione os arquivos baixados na conversa.
+O anexo múltiplo utiliza exclusivamente o seletor de **Fotos e vídeos** do WhatsApp Web, evitando o editor de figurinhas, mas nunca confirma o envio. Se a interface do WhatsApp mudar, use **Baixar fotos** e selecione os arquivos baixados na conversa.
 
 Para publicar na Chrome Web Store, prepare ícones, política de privacidade e revise as permissões antes do envio.

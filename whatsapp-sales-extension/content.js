@@ -43,10 +43,16 @@ function insertDraft(text) {
 }
 
 function findImageInput() {
-  return [...document.querySelectorAll('input[type="file"]')].find(input => {
+  const candidates = [...document.querySelectorAll('input[type="file"]')].filter(input => {
     const accept = (input.getAttribute('accept') || '').toLowerCase();
-    return accept.includes('image') && !input.hasAttribute('capture');
-  }) || null;
+    return accept.includes('image')
+      && input.multiple
+      && !input.hasAttribute('capture')
+      && accept !== 'image/webp';
+  });
+  return candidates.find(input => (input.getAttribute('accept') || '').toLowerCase().includes('video'))
+    || candidates[0]
+    || null;
 }
 
 function attachmentTrigger() {
@@ -84,6 +90,7 @@ async function attachImages(images) {
     transfer.items.add(new File([blob], image.name, { type: image.type || blob.type || 'image/jpeg' }));
   }
   input.files = transfer.files;
+  input.dispatchEvent(new Event('input', { bubbles: true }));
   input.dispatchEvent(new Event('change', { bubbles: true }));
   return { ok: true, count: transfer.files.length };
 }
