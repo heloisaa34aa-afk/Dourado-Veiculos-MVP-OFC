@@ -17,6 +17,7 @@ import { vehicle360Service } from '../services/vehicle360.service';
 import { ClientPoiPanel } from './ClientPoiPanel';
 import { PublicPromotion } from './PublicPromotion';
 import type { SiteBanner } from '../services/banner.service';
+import { useSettings } from '../hooks/useSettings';
 
 const HOTSPOT_VISIBLE_RANGE = 2;
 
@@ -34,6 +35,9 @@ interface CarDetailsProps {
 
 
 export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: CarDetailsProps) {
+  const { settings: companySettings } = useSettings();
+  const configuredWhatsapp = (companySettings?.whatsapp || companySettings?.phone || '').replace(/\D/g, '');
+  const whatsappNumber = configuredWhatsapp && !configuredWhatsapp.startsWith('55') ? `55${configuredWhatsapp}` : configuredWhatsapp;
   type VehicleMediaItem = 
     | { id: 'vehicle-360'; type: '360'; thumbnail: string }
     | { id: string; type: 'image'; url: string; thumbnail: string; imageIndex: number };
@@ -181,9 +185,10 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
   };
 
   const handleWhatsAppInquiry = () => {
+    if (!whatsappNumber) return;
     const pageUrl = window.location.href;
     const text = encodeURIComponent(`Olá Dourado Veículos! Vi o anúncio do ${car.brand} ${car.model} (${car.year}) e gostaria de mais informações. ${pageUrl}`);
-    window.open(`https://wa.me/5511987654321?text=${text}`, '_blank');
+    window.open(`https://wa.me/${whatsappNumber}?text=${text}`, '_blank');
   };
 
   return (
@@ -373,10 +378,11 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [] }: 
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   onClick={handleWhatsAppInquiry}
-                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer"
+                  disabled={!whatsappNumber}
+                  className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer disabled:cursor-not-allowed disabled:bg-slate-600 disabled:text-slate-300"
                 >
                   <MessageCircle className="w-5 h-5 fill-current" />
-                  <span>Negociar no WhatsApp</span>
+                  <span>{whatsappNumber ? 'Negociar no WhatsApp' : 'WhatsApp não configurado'}</span>
                 </motion.button>
 
                 <a

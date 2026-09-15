@@ -3,6 +3,7 @@ import { X, Send, CheckCircle2, MessageSquare, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Car, UserProfile } from '../types';
 import { quoteService } from '../services/quote.service';
+import { useSettings } from '../hooks/useSettings';
 
 interface QuoteModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface QuoteModalProps {
 }
 
 export default function QuoteModal({ isOpen, onClose, car, userProfile }: QuoteModalProps) {
+  const { settings } = useSettings();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -70,11 +72,13 @@ export default function QuoteModal({ isOpen, onClose, car, userProfile }: QuoteM
 Gostaria de consultar as condições de financiamento e entrega!`;
 
       const encodedMessage = encodeURIComponent(messageText);
-      const whatsappUrl = `https://wa.me/5511999999999?text=${encodedMessage}`;
+      const configuredWhatsapp = (settings?.whatsapp || settings?.phone || '').replace(/\D/g, '');
+      const whatsappNumber = configuredWhatsapp && !configuredWhatsapp.startsWith('55') ? `55${configuredWhatsapp}` : configuredWhatsapp;
+      const whatsappUrl = whatsappNumber ? `https://wa.me/${whatsappNumber}?text=${encodedMessage}` : null;
 
       // Redirect to WhatsApp after 2 seconds
       setTimeout(() => {
-        window.open(whatsappUrl, '_blank');
+        if (whatsappUrl) window.open(whatsappUrl, '_blank');
         onClose();
       }, 1500);
 
