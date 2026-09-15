@@ -3,7 +3,7 @@ import { DEFAULT_CONFIG, composeVehicleSequence, filterVehicles, normalizeVehicl
 const state = { vehicles: [], selected: null, customerName: '', config: { ...DEFAULT_CONFIG }, messages: [], currentMessage: 0 };
 const elements = Object.fromEntries([
   'chatContext', 'customerName', 'searchInput', 'inventoryStatus', 'vehicleList', 'composerPanel',
-  'selectedVehicleTitle', 'templateSelect', 'messageSequence', 'sequenceProgress', 'closeComposer', 'copyButton',
+  'selectedVehicleTitle', 'templateSelect', 'mediaSection', 'mediaList', 'messageSequence', 'sequenceProgress', 'closeComposer', 'copyButton',
   'insertButton', 'refreshButton', 'toast'
 ].map(id => [id, document.getElementById(id)]));
 
@@ -80,7 +80,75 @@ function refreshDraft() {
     state.customerName
   );
   state.currentMessage = 0;
+  renderMedia();
   renderMessageSequence();
+}
+
+async function imageAsPngBlob(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Imagem indisponível (${response.status})`);
+  const sourceBlob = await response.blob();
+  const bitmap = await createImageBitmap(sourceBlob);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const context = canvas.getContext('2d');
+  context.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  return await new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao preparar a imagem.')), 'image/png'));
+}
+
+async function copyImage(url, button) {
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = 'Preparando...';
+  try {
+    const pngBlob = await imageAsPngBlob(url);
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })]);
+    showToast('Foto copiada. Clique na conversa e pressione Ctrl+V.');
+  } catch (error) {
+    showToast(error?.message || 'Não foi possível copiar a foto.');
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
+function renderMedia() {
+  elements.mediaList.replaceChildren();
+  const images = state.selected?.images?.slice(0, 10) || [];
+  const videos = state.selected?.videos?.slice(0, 2) || [];
+  elements.mediaSection.hidden = images.length === 0 && videos.length === 0;
+
+  images.forEach((url, index) => {
+    const card = document.createElement('div');
+    card.className = 'media-card';
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = `Foto ${index + 1}`;
+    image.loading = 'lazy';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = `Copiar foto ${index + 1}`;
+    button.addEventListener('click', () => copyImage(url, button));
+    card.append(image, button);
+    elements.mediaList.append(card);
+  });
+
+  videos.forEach((url, index) => {
+    const card = document.createElement('div');
+    card.className = 'media-card';
+    const preview = document.createElement('div');
+    preview.className = 'video-card';
+    preview.textContent = '▶';
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.rel = 'noreferrer';
+    link.textContent = `Abrir vídeo ${index + 1}`;
+    card.append(preview, link);
+    elements.mediaList.append(card);
+  });
 }
 
 function renderMessageSequence() {

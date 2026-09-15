@@ -63,39 +63,31 @@ export function composeVehicleSequence(vehicle, siteUrl, template = 'details', c
   const title = vehicleTitle(vehicle);
   const url = vehicleUrl(vehicle, siteUrl);
   const facts = [
-    vehicle.year && `Ano: ${vehicle.year}`,
-    vehicle.mileage >= 0 && `Quilometragem: ${formatMileage(vehicle.mileage)}`,
-    vehicle.transmission && `Câmbio: ${vehicle.transmission}`,
-    vehicle.fuel && `Combustível: ${vehicle.fuel}`,
-    vehicle.price > 0 && `Valor: ${formatPrice(vehicle.price)}`
+    vehicle.year && `• Ano: ${vehicle.year}`,
+    vehicle.mileage >= 0 && `• Quilometragem: ${formatMileage(vehicle.mileage)}`,
+    vehicle.transmission && `• Câmbio: ${vehicle.transmission}`,
+    vehicle.fuel && `• Combustível: ${vehicle.fuel}`,
+    vehicle.price > 0 && `• Valor: *${formatPrice(vehicle.price)}*`
   ].filter(Boolean).join('\n');
 
   const introductions = {
-    details: `${greeting} 👋\nSeparei o *${title}* para você. 🚘`,
-    availability: `${greeting} 👋\nO *${title}* está disponível em nosso estoque. ✅`,
-    financing: `${greeting} 👋\nVamos simular o financiamento do *${title}*. 💳`,
-    tradein: `${greeting} 👋\nPodemos avaliar seu veículo como parte do pagamento do *${title}*. 🔄`
+    details: `${greeting} Tudo bem? 😊\nAqui é da equipe *Dourado Veículos*. Separei o ${title} que você pediu.`,
+    availability: `${greeting} Tudo bem? 😊\nConfirmei o *${title}* em nosso estoque e separei as informações para você.`,
+    financing: `${greeting} Tudo bem? 😊\nVou te ajudar com uma simulação para o *${title}*.`,
+    tradein: `${greeting} Tudo bem? 😊\nPodemos avaliar seu carro na troca pelo *${title}*.`
   };
   const closings = {
-    details: 'Se quiser, posso confirmar as condições e organizar uma apresentação. 😊',
-    availability: 'Quer que eu organize uma visita ou apresentação para você? 📅',
-    financing: 'Qual valor você pretende dar de entrada e em quantas parcelas gostaria de pagar?',
-    tradein: 'Me envie modelo, ano, quilometragem e algumas fotos do seu carro para iniciarmos a avaliação.'
+    details: `🔗 Fotos e detalhes completos:\n${url}\n\nO que você gostaria de saber primeiro: condição de pagamento, avaliação da troca ou agendamento?`,
+    availability: `🔗 Veja o veículo completo:\n${url}\n\nQual horário fica melhor para você conhecer o carro? 📅`,
+    financing: `🔗 Veja o veículo completo:\n${url}\n\nPara eu montar uma simulação mais próxima do que você procura, qual seria a entrada e a quantidade de parcelas?`,
+    tradein: `🔗 Veja o veículo completo:\n${url}\n\nPara uma pré-avaliação, me envie o modelo, ano, quilometragem e algumas fotos do seu carro. 🔄`
   };
 
   const sequence = [
     introductions[template] || introductions.details,
-    `📋 *Informações do veículo*\n${facts}`
+    `🚘 *${title}*\n${facts}`,
+    closings[template] || closings.details
   ];
-
-  vehicle.images.slice(0, 8).forEach((image, index) => {
-    sequence.push(`📸 *Foto ${index + 1} — ${title}*\n${image}`);
-  });
-  vehicle.videos.slice(0, 2).forEach((video, index) => {
-    sequence.push(`🎥 *Vídeo${vehicle.videos.length > 1 ? ` ${index + 1}` : ''} — ${title}*\n${video}`);
-  });
-  sequence.push(`🔗 *Veja o anúncio completo*\n${url}`);
-  sequence.push(closings[template] || closings.details);
 
   return sequence.filter(Boolean);
 }

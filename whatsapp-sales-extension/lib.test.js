@@ -24,12 +24,13 @@ describe('extensão Dourado Vendas', () => {
     expect(vehicle.price).toBe(129900);
   });
 
-  it('separa texto, fotos, vídeo e link em mensagens organizadas', () => {
+  it('separa a abordagem comercial em três mensagens naturais', () => {
     const sequence = composeVehicleSequence(normalizeVehicle(row), 'https://dourado.test', 'details', 'Ruben');
-    expect(sequence[0]).toContain('👋');
-    expect(sequence.some(message => message.includes('📸') && message.includes('cover.jpg'))).toBe(true);
-    expect(sequence.some(message => message.includes('🎥') && message.includes('video.mp4'))).toBe(true);
-    expect(sequence.some(message => message.includes('🔗') && message.includes('/veiculo/car-1'))).toBe(true);
+    expect(sequence).toHaveLength(3);
+    expect(sequence[0]).toContain('Dourado Veículos');
+    expect(sequence[1]).toContain('R$ 120.000');
+    expect(sequence[2]).toContain('/veiculo/car-1');
+    expect(sequence.join(' ')).not.toContain('cover.jpg');
   });
 
   it('monta mensagem contextual sem enviar automaticamente', () => {
