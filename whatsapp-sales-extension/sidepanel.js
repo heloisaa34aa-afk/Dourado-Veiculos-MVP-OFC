@@ -1,10 +1,10 @@
-import { DEFAULT_CONFIG, composeVehicleMessage, filterVehicles, normalizeVehicle, vehicleTitle } from './lib.js';
+import { DEFAULT_CONFIG, composeVehicleSequence, filterVehicles, normalizeVehicle, vehicleTitle } from './lib.js';
 
-const state = { vehicles: [], selected: null, customerName: '', config: { ...DEFAULT_CONFIG } };
+const state = { vehicles: [], selected: null, customerName: '', config: { ...DEFAULT_CONFIG }, messages: [], currentMessage: 0 };
 const elements = Object.fromEntries([
   'chatContext', 'customerName', 'searchInput', 'inventoryStatus', 'vehicleList', 'composerPanel',
-  'selectedVehicleTitle', 'templateSelect', 'messageDraft', 'closeComposer', 'copyButton',
-  'insertButton', 'refreshButton', 'toast', 'siteUrl', 'supabaseUrl', 'supabaseAnonKey', 'saveSettings'
+  'selectedVehicleTitle', 'templateSelect', 'messageSequence', 'sequenceProgress', 'closeComposer', 'copyButton',
+  'insertButton', 'refreshButton', 'toast'
 ].map(id => [id, document.getElementById(id)]));
 
 function showToast(message) {
@@ -73,12 +73,43 @@ function renderVehicles() {
 
 function refreshDraft() {
   if (!state.selected) return;
-  elements.messageDraft.value = composeVehicleMessage(
+  state.messages = composeVehicleSequence(
     state.selected,
     state.config.siteUrl,
     elements.templateSelect.value,
     state.customerName
   );
+  state.currentMessage = 0;
+  renderMessageSequence();
+}
+
+function renderMessageSequence() {
+  elements.messageSequence.replaceChildren();
+  const completed = state.currentMessage >= state.messages.length;
+  elements.sequenceProgress.textContent = completed ? 'Sequência concluída' : `${state.currentMessage + 1} de ${state.messages.length}`;
+  elements.insertButton.disabled = completed;
+  elements.insertButton.textContent = completed ? 'Concluído' : 'Inserir próxima';
+  state.messages.forEach((message, index) => {
+    const item = document.createElement('div');
+    item.className = `message-item${index === state.currentMessage ? ' active' : ''}${index < state.currentMessage ? ' sent' : ''}`;
+    const number = document.createElement('span');
+    number.className = 'message-number';
+    number.textContent = String(index + 1);
+    const textarea = document.createElement('textarea');
+    textarea.value = message;
+    textarea.rows = message.includes('http') ? 3 : 4;
+    textarea.addEventListener('input', () => { state.messages[index] = textarea.value; });
+    textarea.addEventListener('focus', () => {
+      state.currentMessage = index;
+      elements.sequenceProgress.textContent = `${index + 1} de ${state.messages.length}`;
+      [...elements.messageSequence.children].forEach((element, itemIndex) => {
+        element.classList.toggle('active', itemIndex === index);
+        element.classList.toggle('sent', itemIndex < index);
+      });
+    });
+    item.append(number, textarea);
+    elements.messageSequence.append(item);
+  });
 }
 
 function selectVehicle(vehicle) {
@@ -122,7 +153,7 @@ async function loadInventory() {
   elements.inventoryStatus.textContent = 'Sincronizando estoque...';
   elements.refreshButton.disabled = true;
   try {
-    const select = 'id,brand,model,version,year,price,new_price,mileage,transmission,fuel,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order)';
+    const select = 'id,brand,model,version,year,price,mileage,transmission,fuel,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order),vehicle_videos(video_url,provider)';
     const response = await fetch(`${state.config.supabaseUrl.replace(/\/$/, '')}/rest/v1/vehicles?select=${encodeURIComponent(select)}&order=featured.desc,created_at.desc`, {
       headers: {
         apikey: state.config.supabaseAnonKey,
@@ -143,14 +174,20 @@ async function loadInventory() {
 }
 
 async function insertInConversation() {
-  const text = elements.messageDraft.value.trim();
+  const text = state.messages[state.currentMessage]?.trim();
   if (!text) return showToast('Escreva uma mensagem antes de inserir.');
   const tab = await getActiveWhatsAppTab();
   if (!tab) return showToast('Abra o WhatsApp Web nesta janela.');
 
   try {
     const response = await chrome.tabs.sendMessage(tab.id, { type: 'INSERT_DRAFT', text });
-    showToast(response?.ok ? 'Mensagem inserida. Revise antes de enviar.' : (response?.error || 'Não foi possível inserir.'));
+    if (response?.ok) {
+      state.currentMessage = Math.min(state.currentMessage + 1, state.messages.length);
+      renderMessageSequence();
+      showToast('Rascunho inserido. Envie e continue para o próximo.');
+    } else {
+      showToast(response?.error || 'Não foi possível inserir.');
+    }
   } catch {
     showToast('Recarregue o WhatsApp Web e tente novamente.');
   }
@@ -159,27 +196,14 @@ async function insertInConversation() {
 async function loadConfig() {
   const saved = await chrome.storage.sync.get(DEFAULT_CONFIG);
   state.config = { ...DEFAULT_CONFIG, ...saved };
-  elements.siteUrl.value = state.config.siteUrl;
-  elements.supabaseUrl.value = state.config.supabaseUrl;
-  elements.supabaseAnonKey.value = state.config.supabaseAnonKey;
 }
 
 elements.searchInput.addEventListener('input', renderVehicles);
 elements.templateSelect.addEventListener('change', refreshDraft);
 elements.closeComposer.addEventListener('click', () => { elements.composerPanel.hidden = true; });
 elements.refreshButton.addEventListener('click', async () => { await Promise.all([refreshChatContext(), loadInventory()]); showToast('Estoque atualizado.'); });
-elements.copyButton.addEventListener('click', async () => { await navigator.clipboard.writeText(elements.messageDraft.value); showToast('Mensagem copiada.'); });
+elements.copyButton.addEventListener('click', async () => { await navigator.clipboard.writeText(state.messages[state.currentMessage] || ''); showToast('Mensagem atual copiada.'); });
 elements.insertButton.addEventListener('click', insertInConversation);
-elements.saveSettings.addEventListener('click', async () => {
-  state.config = {
-    siteUrl: elements.siteUrl.value.trim().replace(/\/$/, ''),
-    supabaseUrl: elements.supabaseUrl.value.trim().replace(/\/$/, ''),
-    supabaseAnonKey: elements.supabaseAnonKey.value.trim()
-  };
-  await chrome.storage.sync.set(state.config);
-  showToast('Configuração salva.');
-  await loadInventory();
-});
 chrome.tabs.onActivated.addListener(refreshChatContext);
 chrome.tabs.onUpdated.addListener((_tabId, changeInfo) => { if (changeInfo.status === 'complete') refreshChatContext(); });
 

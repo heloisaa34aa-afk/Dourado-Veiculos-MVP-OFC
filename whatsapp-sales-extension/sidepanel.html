@@ -41,26 +41,15 @@
           <option value="tradein">Receber veículo na troca</option>
         </select>
 
-        <label for="messageDraft">Mensagem para revisar</label>
-        <textarea id="messageDraft" rows="11"></textarea>
+        <div class="sequence-heading"><label>Sequência para revisar</label><span id="sequenceProgress"></span></div>
+        <div id="messageSequence" class="message-sequence"></div>
 
         <div class="actions">
-          <button id="copyButton" class="secondary" type="button">Copiar</button>
-          <button id="insertButton" class="primary" type="button">Inserir na conversa</button>
+          <button id="copyButton" class="secondary" type="button">Copiar atual</button>
+          <button id="insertButton" class="primary" type="button">Inserir próxima</button>
         </div>
-        <p class="notice">A mensagem será inserida como rascunho. Revise e envie manualmente.</p>
+        <p class="notice">Cada item entra separadamente como rascunho. Envie no WhatsApp e depois insira o próximo.</p>
       </section>
-
-      <details class="settings-panel">
-        <summary>Configuração da integração</summary>
-        <label for="siteUrl">Endereço do site</label>
-        <input id="siteUrl" type="url" />
-        <label for="supabaseUrl">URL do Supabase</label>
-        <input id="supabaseUrl" type="url" />
-        <label for="supabaseAnonKey">Chave pública do Supabase</label>
-        <input id="supabaseAnonKey" type="password" />
-        <button id="saveSettings" class="secondary full" type="button">Salvar configuração</button>
-      </details>
     </main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>

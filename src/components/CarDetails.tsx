@@ -260,7 +260,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
                   setGalleryPan({ x: 0, y: 0 });
                 }
               }}
-              className={`relative flex aspect-[4/3] select-none items-center justify-center overflow-hidden rounded-[26px] border border-black/10 bg-[#07090d] shadow-[0_28px_70px_rgba(15,23,42,.2)] sm:aspect-video lg:rounded-[34px] ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
+              className={`relative flex aspect-video select-none items-center justify-center overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_18px_45px_rgba(15,23,42,.16)] sm:rounded-[26px] sm:border sm:border-black/10 sm:bg-[#07090d] lg:rounded-[34px] lg:shadow-[0_28px_70px_rgba(15,23,42,.2)] ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
             >
               
               {resolvingPrimaryMedia ? (
@@ -346,12 +346,12 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
 
           {/* Right Side: Primary purchase and actions card */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="space-y-6 rounded-[28px] bg-[#090b10] p-6 text-white shadow-[0_24px_70px_rgba(15,23,42,.18)] lg:sticky lg:top-28 lg:p-7">
+            <div className="space-y-5 rounded-[22px] bg-[#090b10] p-5 text-white shadow-[0_20px_55px_rgba(15,23,42,.16)] sm:space-y-6 sm:rounded-[28px] sm:p-6 lg:sticky lg:top-28 lg:p-7">
               
               {/* Titles */}
               <div>
                 {car.category && <span className="bg-red-50 text-red-600 text-xs font-bold px-2.5 py-1 rounded-lg uppercase tracking-wider">{car.category}</span>}
-                <h1 className="mt-3 text-4xl font-black tracking-[-.045em] text-white">
+                <h1 className="mt-3 break-words text-3xl font-black leading-[1.05] tracking-[-.045em] text-white sm:text-4xl">
                   {car.brand} {car.model}
                 </h1>
                 {car.version && <p className="mt-1 text-sm font-medium text-slate-400">{car.version}</p>}

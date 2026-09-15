@@ -101,7 +101,7 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
   };
 
   return (
-    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-3 z-[90] sm:bottom-6 sm:right-6">
+    <div className={`fixed right-3 z-[90] sm:bottom-6 sm:right-6 ${vehicle ? 'bottom-[max(5.25rem,calc(env(safe-area-inset-bottom)+4.5rem))]' : 'bottom-[max(1rem,env(safe-area-inset-bottom))]'}`}>
       {open && (
         <section aria-label="Atendimento Dourado" className="fixed inset-x-2 bottom-2 top-2 flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl sm:absolute sm:inset-auto sm:bottom-16 sm:right-0 sm:h-[min(680px,calc(100dvh-110px))] sm:w-[390px]">
           <header className="flex items-center justify-between bg-slate-950 px-4 py-3 text-white">
@@ -145,8 +145,8 @@ export function SalesAssistantChat({ vehicle }: { vehicle?: Car }) {
           )}
         </section>
       )}
-      <button onClick={() => setOpen(value => !value)} aria-label={open ? 'Minimizar atendimento' : 'Falar com atendente'} className="ml-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-600 text-white shadow-[0_10px_35px_rgba(220,38,38,.4)] transition-transform active:scale-95 sm:h-16 sm:w-16">
-        {open ? <ChevronDown className="h-6 w-6" /> : <MessageCircle className="h-7 w-7" />}
+      <button onClick={() => setOpen(value => !value)} aria-label={open ? 'Minimizar atendimento' : 'Falar com atendente'} className="ml-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-[0_10px_35px_rgba(220,38,38,.4)] transition-transform active:scale-95 sm:h-16 sm:w-16">
+        {open ? <ChevronDown className="h-5 w-5 sm:h-6 sm:w-6" /> : <MessageCircle className="h-5 w-5 sm:h-7 sm:w-7" />}
       </button>
     </div>
   );

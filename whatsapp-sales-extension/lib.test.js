@@ -1,18 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { composeVehicleMessage, filterVehicles, normalizeVehicle, vehicleUrl } from './lib.js';
+import { composeVehicleMessage, composeVehicleSequence, filterVehicles, normalizeVehicle, vehicleUrl } from './lib.js';
 
 const row = {
   id: 'car-1', brand: 'Toyota', model: 'Corolla', version: 'XEi', year: 2024,
   price: 120000, mileage: 15000, transmission: 'Automático', fuel: 'Flex', sold: false,
-  categories: { name: 'Sedan' }, vehicle_images: [{ image_url: 'b.jpg', display_order: 2 }, { image_url: 'a.jpg', display_order: 1 }]
+  categories: { name: 'Sedan' }, cover_image: 'cover.jpg',
+  vehicle_images: [{ image_url: 'b.jpg', display_order: 2 }, { image_url: 'a.jpg', display_order: 1 }, { image_url: 'cover.jpg', display_order: 0 }],
+  vehicle_videos: [{ video_url: 'video.mp4', provider: 'upload' }]
 };
 
 describe('extensão Dourado Vendas', () => {
   it('normaliza o veículo e respeita a ordem da galeria', () => {
     const vehicle = normalizeVehicle(row);
-    expect(vehicle.image).toBe('a.jpg');
+    expect(vehicle.image).toBe('cover.jpg');
+    expect(vehicle.images).toEqual(['cover.jpg', 'a.jpg', 'b.jpg']);
+    expect(vehicle.videos).toEqual(['video.mp4']);
     expect(vehicle.category).toBe('Sedan');
     expect(vehicle.sold).toBe(false);
+  });
+
+  it('separa texto, fotos, vídeo e link em mensagens organizadas', () => {
+    const sequence = composeVehicleSequence(normalizeVehicle(row), 'https://dourado.test', 'details', 'Ruben');
+    expect(sequence[0]).toContain('👋');
+    expect(sequence.some(message => message.includes('📸') && message.includes('cover.jpg'))).toBe(true);
+    expect(sequence.some(message => message.includes('🎥') && message.includes('video.mp4'))).toBe(true);
+    expect(sequence.some(message => message.includes('🔗') && message.includes('/veiculo/car-1'))).toBe(true);
   });
 
   it('monta mensagem contextual sem enviar automaticamente', () => {

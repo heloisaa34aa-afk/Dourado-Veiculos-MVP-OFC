@@ -13,8 +13,12 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
 function secretKey() {
   const legacy = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (legacy) return legacy;
-  const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}');
-  return keys.default;
+  try {
+    const keys = JSON.parse(Deno.env.get('SUPABASE_SECRET_KEYS') || '{}');
+    return keys.default || keys.service_role;
+  } catch {
+    return undefined;
+  }
 }
 
 Deno.serve(async (request) => {
@@ -25,7 +29,9 @@ Deno.serve(async (request) => {
     const token = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
     if (!token) return json({ error: 'Entre novamente no painel administrativo.' }, 401);
 
-    const admin = createClient(Deno.env.get('SUPABASE_URL')!, secretKey(), {
+    const serviceRoleKey = secretKey();
+    if (!serviceRoleKey) return json({ error: 'A chave de serviço do Supabase não está configurada na função.' }, 500);
+    const admin = createClient(Deno.env.get('SUPABASE_URL')!, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
     const { data: authData, error: authError } = await admin.auth.getUser(token);
@@ -77,6 +83,7 @@ Deno.serve(async (request) => {
     const { error: roleError } = await admin.from('admins').insert({
       id: created.user.id,
       name,
+      email,
       role: 'admin',
     });
     if (roleError) {
@@ -88,6 +95,7 @@ Deno.serve(async (request) => {
   } catch (error) {
     console.error('[admin-users]', error);
     const message = error instanceof Error ? error.message : 'Não foi possível criar a conta administrativa.';
-    return json({ error: message }, 500);
+    const status = /already|registered|exists|duplicate/i.test(message) ? 409 : 500;
+    return json({ error: message }, status);
   }
 });

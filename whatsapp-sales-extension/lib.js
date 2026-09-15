@@ -9,18 +9,24 @@ export function normalizeVehicle(row) {
     ? [...row.vehicle_images].sort((a, b) => (a.display_order || 0) - (b.display_order || 0))
     : [];
 
+  const cover = row.cover_image || gallery[0]?.image_url || '';
+  const images = [...new Set([cover, ...gallery.map(image => image.image_url)].filter(Boolean))];
+  const videos = Array.isArray(row.vehicle_videos) ? row.vehicle_videos : row.vehicle_videos ? [row.vehicle_videos] : [];
+
   return {
     id: row.id,
     brand: row.brand || '',
     model: row.model || '',
     version: row.version || '',
     year: row.year ? String(row.year) : '',
-    price: Number(row.new_price || row.price || 0),
+    price: Number(row.price || 0),
     mileage: Number(row.mileage || 0),
     transmission: row.transmission || '',
     fuel: row.fuel || '',
     category: row.categories?.name || '',
-    image: gallery[0]?.image_url || row.cover_image || '',
+    image: cover,
+    images,
+    videos: videos.map(video => video.video_url).filter(Boolean),
     featured: Boolean(row.featured),
     sold: Boolean(row.sold) || row.status === 'Vendido'
   };
@@ -49,6 +55,10 @@ function formatMileage(value) {
 }
 
 export function composeVehicleMessage(vehicle, siteUrl, template = 'details', customerName = '') {
+  return composeVehicleSequence(vehicle, siteUrl, template, customerName).join('\n\n');
+}
+
+export function composeVehicleSequence(vehicle, siteUrl, template = 'details', customerName = '') {
   const greeting = customerName ? `Olá, ${customerName}!` : 'Olá!';
   const title = vehicleTitle(vehicle);
   const url = vehicleUrl(vehicle, siteUrl);
@@ -60,14 +70,34 @@ export function composeVehicleMessage(vehicle, siteUrl, template = 'details', cu
     vehicle.price > 0 && `Valor: ${formatPrice(vehicle.price)}`
   ].filter(Boolean).join('\n');
 
-  const messages = {
-    details: `${greeting} Separei os dados do *${title}* para você:\n\n${facts}\n\nFotos e informações completas:\n${url}`,
-    availability: `${greeting} O *${title}* está disponível em nosso estoque. Posso confirmar as condições e organizar uma visita ou apresentação para você.\n\n${url}`,
-    financing: `${greeting} Podemos simular as condições de financiamento do *${title}*. Para preparar uma proposta, me diga o valor de entrada e em quantas parcelas você pretende pagar.\n\n${url}`,
-    tradein: `${greeting} Podemos avaliar seu veículo como parte do pagamento do *${title}*. Me envie modelo, ano, quilometragem e algumas fotos do seu carro para iniciarmos a avaliação.\n\n${url}`
+  const introductions = {
+    details: `${greeting} 👋\nSeparei o *${title}* para você. 🚘`,
+    availability: `${greeting} 👋\nO *${title}* está disponível em nosso estoque. ✅`,
+    financing: `${greeting} 👋\nVamos simular o financiamento do *${title}*. 💳`,
+    tradein: `${greeting} 👋\nPodemos avaliar seu veículo como parte do pagamento do *${title}*. 🔄`
+  };
+  const closings = {
+    details: 'Se quiser, posso confirmar as condições e organizar uma apresentação. 😊',
+    availability: 'Quer que eu organize uma visita ou apresentação para você? 📅',
+    financing: 'Qual valor você pretende dar de entrada e em quantas parcelas gostaria de pagar?',
+    tradein: 'Me envie modelo, ano, quilometragem e algumas fotos do seu carro para iniciarmos a avaliação.'
   };
 
-  return messages[template] || messages.details;
+  const sequence = [
+    introductions[template] || introductions.details,
+    `📋 *Informações do veículo*\n${facts}`
+  ];
+
+  vehicle.images.slice(0, 8).forEach((image, index) => {
+    sequence.push(`📸 *Foto ${index + 1} — ${title}*\n${image}`);
+  });
+  vehicle.videos.slice(0, 2).forEach((video, index) => {
+    sequence.push(`🎥 *Vídeo${vehicle.videos.length > 1 ? ` ${index + 1}` : ''} — ${title}*\n${video}`);
+  });
+  sequence.push(`🔗 *Veja o anúncio completo*\n${url}`);
+  sequence.push(closings[template] || closings.details);
+
+  return sequence.filter(Boolean);
 }
 
 export function filterVehicles(vehicles, query) {

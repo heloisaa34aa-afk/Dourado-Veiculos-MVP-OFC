@@ -108,10 +108,10 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openPoiModal(h); }}
-          className="pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-xl transition-transform hover:scale-110"
+          className="pointer-events-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-blue-600 text-white shadow-lg transition-transform hover:scale-110 sm:h-10 sm:w-10 sm:shadow-xl"
           aria-label={h.title}
         >
-          <Info size={16} />
+          <Info className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </button>
       )
     })),
@@ -123,17 +123,17 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         <button 
           onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => { e.stopPropagation(); openDamageModal(d); }}
-          className="pointer-events-auto flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-600 text-white shadow-xl transition-transform hover:scale-110"
+          className="pointer-events-auto flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border-2 border-white bg-red-600 text-white shadow-lg transition-transform hover:scale-110 sm:h-10 sm:w-10 sm:shadow-xl"
           aria-label={d.title}
         >
-          <AlertTriangle size={16} />
+          <AlertTriangle className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
         </button>
       )
     }))
   ];
 
   return (
-    <div className={`overflow-hidden bg-[#07090d] text-white shadow-sm flex flex-col ${embedded ? 'w-full h-full' : 'rounded-[28px] border border-white/10'}`}>
+    <div className={`flex flex-col overflow-hidden text-white ${embedded ? 'h-full w-full bg-slate-100 sm:bg-[#07090d]' : 'rounded-[28px] border border-white/10 bg-[#07090d] shadow-sm'}`}>
       {!embedded && (
         <div className="flex items-center justify-between border-b border-white/10 p-4">
           <h3 className="font-bold text-white">Visão 360° do veículo</h3>
@@ -152,7 +152,7 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         </div>
       )}
 
-      <div className={`relative flex-1 touch-none bg-[#07090d] ${!embedded ? 'aspect-[4/3] sm:aspect-video' : 'h-full w-full'}`}>
+      <div className={`relative flex-1 touch-none ${embedded ? 'h-full w-full bg-slate-100 sm:bg-[#07090d]' : 'aspect-video bg-[#07090d]'}`}>
         {!frameReady && <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950 text-sm font-semibold text-white">Preparando giro 360°...</div>}
         <ImageCoordinateStage
           imageUrl={currentFrameData.imageUrl}
@@ -170,13 +170,13 @@ export function ClientPoiPanel({ vehicleId, embedded = false, viewType = 'exteri
         </div>
 
         {embedded && (
-           <button onClick={toggleAutoSpin} className="absolute bottom-3 right-3 z-10 grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-black/60 text-white shadow-lg backdrop-blur transition hover:bg-black/80 sm:bottom-5 sm:right-5" aria-label={isAutoSpinning ? "Pausar giro" : "Giro automático"}>
-             {isAutoSpinning ? <Pause size={24} /> : <Play size={24} />}
+           <button onClick={toggleAutoSpin} className="absolute bottom-2.5 right-2.5 z-10 grid h-9 w-9 place-items-center rounded-full border border-white/15 bg-black/65 text-white shadow-lg backdrop-blur transition hover:bg-black/80 sm:bottom-5 sm:right-5 sm:h-11 sm:w-11" aria-label={isAutoSpinning ? "Pausar giro" : "Giro automático"}>
+             {isAutoSpinning ? <Pause className="h-4 w-4 sm:h-6 sm:w-6" /> : <Play className="h-4 w-4 sm:h-6 sm:w-6" />}
            </button>
         )}
 
-        <div className="pointer-events-none absolute bottom-3 left-3 right-16 flex sm:bottom-5 sm:left-5">
-          <div className="rounded-full border border-white/10 bg-black/55 px-3 py-2 text-xs font-bold text-white shadow-sm backdrop-blur">
+        <div className="pointer-events-none absolute bottom-2.5 left-2.5 right-14 flex sm:bottom-5 sm:left-5 sm:right-16">
+          <div className="rounded-full border border-white/10 bg-black/60 px-2.5 py-1.5 text-[10px] font-bold text-white shadow-sm backdrop-blur sm:px-3 sm:py-2 sm:text-xs">
             <span>{isDragging ? 'Girando…' : 'Arraste para explorar'}</span>
           </div>
         </div>

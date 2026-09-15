@@ -13,14 +13,12 @@ function parseYear(yearVal: any): number {
 
 // Helper to map DB vehicle format to frontend Car format
 export function mapDbToCar(v: any): Car {
-  let images: string[] = [];
-  if (v.vehicle_images && v.vehicle_images.length > 0) {
-    images = [...v.vehicle_images]
+  const gallery = v.vehicle_images && v.vehicle_images.length > 0
+    ? [...v.vehicle_images]
       .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0))
-      .map((img: any) => img.image_url);
-  } else if (v.cover_image) {
-    images = [v.cover_image];
-  }
+      .map((img: any) => img.image_url)
+    : [];
+  const images = [...new Set([v.cover_image, ...gallery].filter(Boolean))] as string[];
 
   const categoryName = v.categories?.name || (typeof v.category === 'string' ? v.category : '');
   const categoryUuid = v.category_id || v.categories?.id;
@@ -170,8 +168,8 @@ export const vehicleService = {
     const vehicleId = vehicle.id;
 
     // 2. Insert image URLs associated (no order_index column in vehicle_images)
-    if (car.images && car.images.length > 0) {
-      const imageRecords = car.images.map((url) => ({
+    if (car.images && car.images.length > 1) {
+      const imageRecords = [...new Set(car.images)].slice(1).map((url) => ({
         vehicle_id: vehicleId,
         image_url: url
       }));
@@ -261,8 +259,8 @@ export const vehicleService = {
     // 2. Refresh images if provided (no order_index column in vehicle_images)
     if (car.images !== undefined) {
       await supabase.from('vehicle_images').delete().eq('vehicle_id', id);
-      if (car.images.length > 0) {
-        const imageRecords = car.images.map((url) => ({
+      if (car.images.length > 1) {
+        const imageRecords = [...new Set(car.images)].slice(1).map((url) => ({
           vehicle_id: id,
           image_url: url
         }));

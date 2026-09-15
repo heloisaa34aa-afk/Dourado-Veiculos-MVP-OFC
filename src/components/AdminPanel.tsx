@@ -372,7 +372,7 @@ export default function AdminPanel({
       brand: formBrand,
       model: formModel,
       version: formVersion,
-      price: 0, // No price displays anymore!
+      price: Number(formPrice) || 0,
       year: combinedYear,
       km: Number(formKm),
       gearbox: formGearbox,
@@ -1500,7 +1500,7 @@ export default function AdminPanel({
                       <h4 className="text-xs uppercase font-extrabold text-red-600 tracking-wider border-b border-slate-100 pb-2">
                         Informações de Identificação
                       </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1">Marca</label>
                           <input
@@ -1509,6 +1509,19 @@ export default function AdminPanel({
                             value={formBrand}
                             onChange={(e) => setFormBrand(e.target.value)}
                             placeholder="Ex: Chevrolet, Toyota, BMW"
+                            className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-600 mb-1">Preço de Venda (R$)</label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="100"
+                            required
+                            value={formPrice}
+                            onChange={(e) => setFormPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                            placeholder="Ex: 129900"
                             className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-600"
                           />
                         </div>

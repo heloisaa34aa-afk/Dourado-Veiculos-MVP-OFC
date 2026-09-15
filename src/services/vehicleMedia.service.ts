@@ -60,7 +60,7 @@ export const vehicleMediaService = {
         console.error('Error fetching vehicle_images from Supabase:', imgError);
       } else if (dbImages && dbImages.length > 0) {
         const sorted = [...dbImages].sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
-        result.gallery = sorted.map((img: any) => img.image_url);
+        result.gallery = [...new Set(sorted.map((img: any) => img.image_url).filter((url: string) => url && url !== result.cover))] as string[];
         if (!result.cover && result.gallery.length > 0) {
           result.cover = result.gallery[0];
         }
@@ -105,6 +105,13 @@ export const vehicleMediaService = {
    * Save Gallery Images
    */
   async saveGallery(vehicleId: string, imageUrls: string[]): Promise<void> {
+    const { data: vehicle } = await supabase
+      .from('vehicles')
+      .select('cover_image')
+      .eq('id', vehicleId)
+      .maybeSingle();
+    const uniqueGallery = [...new Set(imageUrls.filter(url => url && url !== vehicle?.cover_image))];
+
     // Delete old gallery images
     const { error: delError } = await supabase
       .from('vehicle_images')
@@ -116,8 +123,8 @@ export const vehicleMediaService = {
       throw delError;
     }
 
-    if (imageUrls.length > 0) {
-      const records = imageUrls.map((url) => ({
+    if (uniqueGallery.length > 0) {
+      const records = uniqueGallery.map((url) => ({
         vehicle_id: vehicleId,
         image_url: url
       }));

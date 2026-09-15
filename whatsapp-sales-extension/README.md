@@ -7,9 +7,10 @@ Extensão Chrome Manifest V3 que abre um painel lateral no WhatsApp Web, consult
 - sincroniza somente os veículos disponíveis no Supabase;
 - pesquisa por marca, modelo, versão, ano ou categoria;
 - mostra foto, dados essenciais, quilometragem e preço;
-- gera mensagens para detalhes, disponibilidade, financiamento ou troca;
+- gera uma sequência de mensagens com emojis para detalhes, disponibilidade, financiamento ou troca;
+- inclui fotos e vídeos públicos em mensagens separadas, sem misturar frames do 360°;
 - reconhece o nome exibido na conversa quando o WhatsApp disponibiliza essa informação;
-- copia a mensagem ou a insere como rascunho no campo da conversa;
+- copia ou insere cada mensagem separadamente como rascunho no campo da conversa;
 - nunca envia automaticamente.
 
 ## Instalação local no Chrome
@@ -23,13 +24,7 @@ Extensão Chrome Manifest V3 que abre um painel lateral no WhatsApp Web, consult
 
 ## Configuração
 
-O MVP já utiliza o projeto Supabase e o domínio público atuais. A seção **Configuração da integração** permite alterar:
-
-- endereço público do site;
-- URL do Supabase;
-- chave pública/anon do Supabase.
-
-Use apenas a chave pública. Nunca coloque `service_role` na extensão.
+O MVP já utiliza o projeto Supabase e o domínio público atuais. A configuração técnica não é exibida ao vendedor. Nunca coloque uma chave `service_role` na extensão.
 
 ## Limites intencionais
 
