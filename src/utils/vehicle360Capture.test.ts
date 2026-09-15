@@ -27,9 +27,9 @@ describe('vehicle 360 mobile capture utilities', () => {
     ], 2)).toBe(2);
   });
 
-  it('keeps the longest processed side at 1600 pixels', () => {
-    expect(calculateCaptureDimensions(4032, 3024)).toEqual({ width: 1600, height: 1200 });
-    expect(calculateCaptureDimensions(1000, 2000)).toEqual({ width: 800, height: 1600 });
+  it('keeps the longest processed side at 1280 pixels for faster mobile uploads', () => {
+    expect(calculateCaptureDimensions(4032, 3024)).toEqual({ width: 1280, height: 960 });
+    expect(calculateCaptureDimensions(1000, 2000)).toEqual({ width: 640, height: 1280 });
   });
 
   it('uses circular exterior instructions', () => {
@@ -62,10 +62,10 @@ describe('vehicle 360 mobile capture utilities', () => {
     }) as typeof document.createElement);
 
     const result = await processVehicleCaptureImage(new File(['raw'], 'photo.jpg', { type: 'image/jpeg' }));
-    expect(result).toMatchObject({ width: 1600, height: 1200 });
+    expect(result).toMatchObject({ width: 1280, height: 960 });
     expect(result.blob.type).toBe('image/jpeg');
     expect(drawImage).toHaveBeenCalled();
-    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.8);
+    expect(toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.74);
     expect(close).toHaveBeenCalled();
   });
 });

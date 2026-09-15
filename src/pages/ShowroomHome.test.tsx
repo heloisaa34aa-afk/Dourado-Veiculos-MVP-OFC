@@ -24,4 +24,16 @@ describe('ShowroomHome discovery navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: /Ver carros disponíveis/i }));
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/estoque'));
   });
+
+  it('mantém o destaque em fotos sem carregar opção 360 na página inicial', () => {
+    const car = {
+      id: 'car-1', brand: 'Fiat', model: 'Strada', version: 'Turbo', price: 100000,
+      year: '2023', km: 1000, gearbox: 'Automático', fuel: 'Flex', color: 'Branco',
+      plateEnd: '1', description: '', images: ['one.jpg', 'two.jpg'], features: [],
+      category: 'Picape', isFeatured: true, views: 0, whatsappClicks: 0, createdAt: '2026-01-01',
+    } as any;
+    render(<MemoryRouter><ShowroomHome cars={[car]} loading={false} carsError={null} banners={[]} onSelectCar={vi.fn()} onSubmitLead={vi.fn()} /></MemoryRouter>);
+    expect(screen.getAllByRole('img', { name: 'Fiat Strada' }).length).toBeGreaterThan(0);
+    expect(screen.queryByRole('button', { name: /360/i })).not.toBeInTheDocument();
+  });
 });

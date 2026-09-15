@@ -6,6 +6,7 @@ import { vehicle360CaptureService } from '../services/vehicle360Capture.service'
 import type { CaptureFrameDto, CaptureSessionDto } from '../services/vehicle360Capture.service';
 import {
   findFirstMissingSlot,
+  calculateCaptureDimensions,
   getCaptureInstruction,
   processVehicleCaptureImage,
 } from '../utils/vehicle360Capture';
@@ -32,7 +33,11 @@ export default function Vehicle360MobileCapture() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
   const preparedUploadsRef = useRef(new Map<number, Promise<PreparedUpload>>());
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraStarting, setCameraStarting] = useState(false);
 
   const clearPreview = useCallback(() => {
     setPreviewUrl(previous => {
@@ -42,6 +47,75 @@ export default function Vehicle360MobileCapture() {
     setCapture(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
+
+  const closeCamera = useCallback(() => {
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+    cameraStreamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setCameraOpen(false);
+    setCameraStarting(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  }, []);
+
+  const startCamera = useCallback(async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      setError(null);
+      setCameraOpen(true);
+      setCameraStarting(true);
+      if (!document.fullscreenElement) void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: 1920 },
+          height: { ideal: 1080 },
+          aspectRatio: { ideal: 16 / 9 },
+        },
+      });
+      cameraStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+    } catch (caught) {
+      closeCamera();
+      setError(caught instanceof Error ? `Não foi possível abrir a câmera: ${caught.message}` : 'Não foi possível abrir a câmera.');
+    } finally {
+      setCameraStarting(false);
+    }
+  }, [closeCamera]);
+
+  const captureCameraFrame = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video?.videoWidth || !video.videoHeight) return;
+    try {
+      setBusy(true);
+      const { width, height } = calculateCaptureDimensions(video.videoWidth, video.videoHeight);
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext('2d');
+      if (!context) throw new Error('Não foi possível preparar a imagem.');
+      context.drawImage(video, 0, 0, width, height);
+      const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(
+        result => result ? resolve(result) : reject(new Error('Não foi possível salvar a foto.')),
+        'image/jpeg',
+        0.74,
+      ));
+      clearPreview();
+      setCapture({ blob, width, height });
+      setPreviewUrl(URL.createObjectURL(blob));
+      closeCamera();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Não foi possível salvar a foto.');
+    } finally {
+      setBusy(false);
+    }
+  }, [clearPreview, closeCamera]);
 
   const loadSession = useCallback(async () => {
     if (!token) {
@@ -91,11 +165,24 @@ export default function Vehicle360MobileCapture() {
     void getPreparedUpload(currentStep).catch(() => {
       // Confirmation requests a fresh URL if this preload fails.
     });
+    if (currentStep + 1 < session.target_frame_count) {
+      void getPreparedUpload(currentStep + 1).catch(() => undefined);
+    }
   }, [currentStep, getPreparedUpload, session]);
 
   useEffect(() => () => {
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
+
+  useEffect(() => () => {
+    cameraStreamRef.current?.getTracks().forEach(track => track.stop());
+  }, []);
+
+  useEffect(() => {
+    if (!cameraOpen || !videoRef.current || !cameraStreamRef.current) return;
+    videoRef.current.srcObject = cameraStreamRef.current;
+    void videoRef.current.play().catch(() => undefined);
+  }, [cameraOpen, cameraStarting]);
 
   const confirmedBySlot = useMemo(
     () => new Map(frames.filter(frame => frame.status === 'confirmed').map(frame => [frame.slot_number, frame])),
@@ -120,6 +207,7 @@ export default function Vehicle360MobileCapture() {
     try {
       setBusy(true);
       setError(null);
+      void getPreparedUpload(currentStep).catch(() => undefined);
       const processed = await processVehicleCaptureImage(file);
       clearPreview();
       setCapture(processed);
@@ -131,6 +219,23 @@ export default function Vehicle360MobileCapture() {
       setBusy(false);
     }
   };
+
+  if (cameraOpen) {
+    return (
+      <div className="fixed inset-0 z-[2000] flex h-[100dvh] w-screen flex-col overflow-hidden bg-black text-white">
+        <video ref={videoRef} autoPlay playsInline muted className="min-h-0 flex-1 w-full object-contain" />
+        {cameraStarting && <div className="absolute inset-0 grid place-items-center bg-black/70"><Loader2 className="h-12 w-12 animate-spin text-white" /></div>}
+        <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 to-transparent px-4 pb-12 pt-[max(1rem,env(safe-area-inset-top))] text-center">
+          <p className="text-sm font-black">{instruction?.title}</p>
+          <p className="mt-1 text-xs text-white/75">Gire o celular na horizontal e mantenha o carro inteiro no quadro.</p>
+        </div>
+        <button type="button" onClick={closeCamera} className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))] grid h-11 w-11 place-items-center rounded-full bg-black/65" aria-label="Fechar câmera"><X className="h-6 w-6" /></button>
+        <div className="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/90 to-transparent pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-14">
+          <button type="button" onClick={() => void captureCameraFrame()} disabled={cameraStarting || busy} className="grid h-20 w-20 place-items-center rounded-full border-4 border-white bg-white/25 shadow-2xl disabled:opacity-50" aria-label="Capturar foto"><span className="h-14 w-14 rounded-full bg-white" /></button>
+        </div>
+      </div>
+    );
+  }
 
   const handleConfirm = async () => {
     if (!capture || !token || !session) return;
@@ -247,7 +352,7 @@ export default function Vehicle360MobileCapture() {
         </div>
         <div className="grid shrink-0 grid-cols-2 gap-3 border-t border-gray-800 bg-gray-900 p-4 pb-7">
           <button onClick={() => void handleDeleteFrame(currentStep)} disabled={busy} className="rounded-2xl bg-gray-800 py-4 font-bold disabled:opacity-50"><Trash2 className="mr-2 inline h-5 w-5" />Excluir foto {currentStep + 1}</button>
-          <button onClick={() => fileInputRef.current?.click()} disabled={busy} className="rounded-2xl bg-indigo-600 py-4 font-bold disabled:opacity-50"><RotateCcw className="mr-2 inline h-5 w-5" />Refazer foto</button>
+          <button onClick={() => void startCamera()} disabled={busy} className="rounded-2xl bg-indigo-600 py-4 font-bold disabled:opacity-50"><RotateCcw className="mr-2 inline h-5 w-5" />Refazer foto</button>
           <button onClick={() => void handleFinalize()} disabled={busy} className="col-span-2 rounded-2xl bg-green-600 py-4 font-bold disabled:opacity-50">{busy ? <Loader2 className="mr-2 inline h-5 w-5 animate-spin" /> : <Check className="mr-2 inline h-5 w-5" />}Finalizar e enviar ao projeto</button>
         </div>
         <CaptureInput inputRef={fileInputRef} onChange={handleFileChange} />
@@ -319,20 +424,21 @@ export default function Vehicle360MobileCapture() {
         {previewUrl ? (
           <div className="grid grid-cols-3 gap-3">
             <button onClick={clearPreview} disabled={busy} className="rounded-2xl bg-gray-800 py-4 font-bold disabled:opacity-50"><X className="mr-1 inline h-5 w-5" />Cancelar</button>
-            <button onClick={() => fileInputRef.current?.click()} disabled={busy} className="rounded-2xl bg-gray-800 py-4 font-bold disabled:opacity-50"><RotateCcw className="mr-1 inline h-5 w-5" />Refazer</button>
+            <button onClick={() => void startCamera()} disabled={busy} className="rounded-2xl bg-gray-800 py-4 font-bold disabled:opacity-50"><RotateCcw className="mr-1 inline h-5 w-5" />Refazer</button>
             <button onClick={() => void handleConfirm()} disabled={busy} className="rounded-2xl bg-indigo-600 py-4 font-bold disabled:opacity-50">{busy ? <Loader2 className="inline h-5 w-5 animate-spin" /> : <><Check className="mr-1 inline h-5 w-5" />Confirmar</>}</button>
           </div>
         ) : (
-          <div className={canFinalize ? 'grid grid-cols-2 gap-3' : ''}>
-            <button onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full rounded-2xl bg-indigo-600 py-4 font-bold shadow-lg disabled:opacity-50"><Camera className="mr-2 inline h-5 w-5" />Tirar foto</button>
+          <div className="grid grid-cols-2 gap-3">
+            <button onClick={() => void startCamera()} disabled={busy} className="w-full rounded-2xl bg-indigo-600 py-4 font-bold shadow-lg disabled:opacity-50"><Camera className="mr-2 inline h-5 w-5" />Abrir câmera</button>
+            <button onClick={() => fileInputRef.current?.click()} disabled={busy} className="w-full rounded-2xl bg-gray-800 py-4 text-sm font-bold shadow-lg disabled:opacity-50"><UploadCloud className="mr-2 inline h-5 w-5" />Galeria</button>
             {canFinalize && (
-              <button onClick={() => void handleFinalize()} disabled={busy} className="w-full rounded-2xl bg-green-600 px-2 py-3 text-sm font-bold shadow-lg disabled:opacity-50">
+              <button onClick={() => void handleFinalize()} disabled={busy} className="col-span-2 w-full rounded-2xl bg-green-600 px-2 py-3 text-sm font-bold shadow-lg disabled:opacity-50">
                 {busy ? <Loader2 className="mr-1 inline h-5 w-5 animate-spin" /> : <Check className="mr-1 inline h-5 w-5" />}
                 Finalizar com {confirmedFrameCount}
               </button>
             )}
             {!canFinalize && (
-              <p className="mt-2 text-center text-[11px] text-gray-500">Mínimo para finalizar: {minimumFrameCount} fotos em sequência.</p>
+              <p className="col-span-2 mt-1 text-center text-[11px] text-gray-500">Mínimo para finalizar: {minimumFrameCount} fotos em sequência.</p>
             )}
           </div>
         )}

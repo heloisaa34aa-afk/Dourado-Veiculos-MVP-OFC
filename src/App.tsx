@@ -53,10 +53,23 @@ export default function App() {
 
   // Check auth session on mount
   useEffect(() => {
-    authService.getProfile().then(profile => {
-      setUserProfile(profile);
-      setAuthChecking(false);
-    });
+    let active = true;
+    const refreshProfile = async () => {
+      try {
+        const profile = await authService.getProfile();
+        if (active) setUserProfile(profile);
+      } finally {
+        if (active) setAuthChecking(false);
+      }
+    };
+    void refreshProfile();
+    const unsubscribe = authService.onAuthStateChange?.(profile => {
+      if (active) setUserProfile(profile);
+    }) || (() => undefined);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   const navigate = useNavigate();

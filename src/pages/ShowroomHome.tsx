@@ -2,14 +2,13 @@ import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, BadgeCheck, Banknote, CarFront, ChevronRight,
-  Headphones, Images, RotateCcw, Search, ShieldCheck, Sparkles,
+  Headphones, Images, Search, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import type { Car, LeadMessage } from '../types';
 import type { SiteBanner } from '../services/banner.service';
 import CarCard from '../components/CarCard';
 import { PublicPromotion } from '../components/PublicPromotion';
 import { VehicleMatchQuiz } from '../components/VehicleMatchQuiz';
-import { useVehicle360 } from '../hooks/useVehicle360';
 import { catalogUrl, derivePriceBands, formatCompactPrice } from '../utils/vehicleCatalog';
 
 interface ShowroomHomeProps {
@@ -21,78 +20,36 @@ interface ShowroomHomeProps {
   onSubmitLead: (lead: Omit<LeadMessage, 'id' | 'createdAt' | 'status'>) => Promise<void> | void;
 }
 
-function FeaturedVehicleMedia({ car, onInteractiveChange }: { car: Car; onInteractiveChange: (active: boolean) => void }) {
-  const [mode, setMode] = useState<'photos' | '360'>('photos');
+function FeaturedVehicleMedia({ car }: { car: Car }) {
   const [photoIndex, setPhotoIndex] = useState(0);
   const images = car.images;
 
   useEffect(() => {
-    setMode('photos');
     setPhotoIndex(0);
-    onInteractiveChange(false);
-  }, [car.id, onInteractiveChange]);
+  }, [car.id]);
 
   useEffect(() => {
-    if (mode !== 'photos' || images.length < 2) return;
+    if (images.length < 2) return;
     const timer = window.setInterval(() => setPhotoIndex(index => (index + 1) % images.length), 3200);
     return () => window.clearInterval(timer);
-  }, [images.length, mode]);
+  }, [images.length]);
 
-  const chooseMode = (next: 'photos' | '360') => {
-    setMode(next);
-    onInteractiveChange(next === '360');
-  };
+  useEffect(() => {
+    if (images.length < 2) return;
+    const nextImage = new Image();
+    nextImage.src = images[(photoIndex + 1) % images.length];
+  }, [images, photoIndex]);
 
   return <div className="overflow-hidden rounded-[28px] border border-white/15 bg-black/45 shadow-[0_30px_90px_rgba(0,0,0,.45)] backdrop-blur">
     <div className="relative aspect-[4/3] overflow-hidden bg-[#080a0e] sm:aspect-video">
-      {mode === '360'
-        ? <Featured360Player car={car} onUnavailable={() => chooseMode('photos')} />
-        : images.length > 0
-          ? <img key={`${car.id}-${photoIndex}`} src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
-          : <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400"><CarFront className="h-12 w-12" /><span className="text-sm font-bold">Foto ainda não publicada</span></div>}
+      {images.length > 0
+        ? <img src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
+        : <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400"><CarFront className="h-12 w-12" /><span className="text-sm font-bold">Foto ainda não publicada</span></div>}
 
-      <div className="absolute right-3 top-3 flex rounded-full border border-white/15 bg-black/65 p-1 text-white backdrop-blur">
-        <button onClick={() => chooseMode('photos')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === 'photos' ? 'bg-white text-slate-950' : ''}`}><Images className="h-4 w-4" /> Fotos</button>
-        <button onClick={() => chooseMode('360')} className={`flex min-h-9 items-center gap-1.5 rounded-full px-3 text-xs font-extrabold ${mode === '360' ? 'bg-red-600 text-white' : ''}`}><RotateCcw className="h-4 w-4" /> 360°</button>
-      </div>
-      {mode === 'photos' && images.length > 1 && <div className="absolute bottom-3 right-3 flex gap-1.5">{images.slice(0, 8).map((_, index) => <button key={index} onClick={() => setPhotoIndex(index)} aria-label={`Ver foto ${index + 1}`} className={`h-1.5 rounded-full ${index === photoIndex % images.length ? 'w-7 bg-red-500' : 'w-1.5 bg-white/60'}`} />)}</div>}
+      {images.length > 0 && <div className="pointer-events-none absolute right-3 top-3 flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-3 text-xs font-extrabold text-white backdrop-blur"><Images className="h-4 w-4" /> {photoIndex + 1}/{images.length}</div>}
+      {images.length > 1 && <div className="absolute bottom-3 right-3 flex gap-1.5">{images.slice(0, 8).map((_, index) => <button key={index} onClick={() => setPhotoIndex(index)} aria-label={`Ver foto ${index + 1}`} className={`h-1.5 rounded-full ${index === photoIndex % images.length ? 'w-7 bg-red-500' : 'w-1.5 bg-white/60'}`} />)}</div>}
     </div>
   </div>;
-}
-
-function Featured360Player({ car, onUnavailable }: { car: Car; onUnavailable: () => void }) {
-  const viewer = useVehicle360(car.id, 'public', 'exterior');
-  const frames = viewer.project?.frames || [];
-
-  useEffect(() => {
-    if (!viewer.loading && frames.length === 0) {
-      const timer = window.setTimeout(onUnavailable, 1200);
-      return () => window.clearTimeout(timer);
-    }
-  }, [frames.length, onUnavailable, viewer.loading]);
-
-  if (viewer.loading) {
-    return <div className="flex h-full items-center justify-center text-sm font-bold text-white">Carregando visualização...</div>;
-  }
-  if (!frames.length) {
-    return <div className="flex h-full items-center justify-center text-sm font-bold text-white">Este veículo ainda não possui visão 360°.</div>;
-  }
-
-  return <>
-    <img
-      src={frames[viewer.currentFrame]?.imageUrl || frames[0].imageUrl}
-      alt={`Visão 360° do ${car.brand} ${car.model}`}
-      draggable={false}
-      onPointerDown={viewer.handlePointerDown}
-      onPointerMove={viewer.handlePointerMove}
-      onPointerUp={viewer.handlePointerUp}
-      onPointerCancel={viewer.handlePointerUp}
-      onPointerLeave={viewer.handlePointerUp}
-      className="h-full w-full touch-none cursor-ew-resize object-contain"
-      decoding="async"
-    />
-    <div className="pointer-events-none absolute bottom-3 left-3 rounded-full bg-black/65 px-3 py-2 text-xs font-bold text-white backdrop-blur">Arraste para girar · {viewer.currentFrame + 1}/{frames.length}</div>
-  </>;
 }
 
 export default function ShowroomHome({ cars, loading, carsError, banners, onSelectCar, onSubmitLead }: ShowroomHomeProps) {
@@ -104,7 +61,6 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
   const [phone, setPhone] = useState('');
   const [sent, setSent] = useState(false);
   const [featuredIndex, setFeaturedIndex] = useState(0);
-  const [featuredPaused, setFeaturedPaused] = useState(false);
 
   const available = useMemo(() => cars.filter(car => !car.isSold), [cars]);
   const featuredCars = useMemo(() => {
@@ -118,10 +74,18 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
   const priceBands = useMemo(() => derivePriceBands(available), [available]);
 
   useEffect(() => {
-    if (featuredCars.length < 2 || featuredPaused) return;
+    if (featuredCars.length < 2) return;
     const timer = window.setInterval(() => setFeaturedIndex(index => (index + 1) % featuredCars.length), 6500);
     return () => window.clearInterval(timer);
-  }, [featuredCars.length, featuredPaused]);
+  }, [featuredCars.length]);
+
+  useEffect(() => {
+    featuredCars.forEach(car => {
+      if (!car.images[0]) return;
+      const image = new Image();
+      image.src = car.images[0];
+    });
+  }, [featuredCars]);
 
   useEffect(() => { setFeaturedIndex(index => Math.min(index, Math.max(featuredCars.length - 1, 0))); }, [featuredCars.length]);
 
@@ -190,7 +154,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
             </div>
 
             <div className="mt-9 grid max-w-lg grid-cols-3 gap-3 border-t border-slate-200 pt-6">
-              <div><strong className="block text-lg font-black text-slate-950">360°</strong><span className="text-xs text-slate-500">por dentro e fora</span></div>
+              <div><strong className="block text-lg font-black text-slate-950">Compra segura</strong><span className="text-xs text-slate-500">com transparência</span></div>
               <div><strong className="block text-lg font-black text-slate-950">Estoque real</strong><span className="text-xs text-slate-500">atualizado</span></div>
               <div><strong className="block text-lg font-black text-slate-950">Compare</strong><span className="text-xs text-slate-500">dados disponíveis</span></div>
             </div>
@@ -202,7 +166,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
                 <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Destaque da vez</p><h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{featured.brand} {featured.model}</h2><p className="mt-1 text-sm font-semibold text-slate-500">{featured.version} · {featured.year}</p></div>
                 <button onClick={() => onSelectCar(featured)} className="hidden min-h-11 shrink-0 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-500 sm:inline-flex">Conhecer <ChevronRight className="h-4 w-4" /></button>
               </div>
-              <FeaturedVehicleMedia key={featured.id} car={featured} onInteractiveChange={setFeaturedPaused} />
+              <FeaturedVehicleMedia key={featured.id} car={featured} />
               <div className="mt-4 flex items-center justify-between gap-3">
                 {featuredCars.length > 1 ? <div className="flex items-center gap-2" aria-label="Veículos em destaque"><button onClick={() => setFeaturedIndex(index => (index - 1 + featuredCars.length) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Destaque anterior"><ArrowLeft className="h-4 w-4" /></button><div className="flex gap-1.5">{featuredCars.map((car, index) => <button key={car.id} onClick={() => setFeaturedIndex(index)} aria-label={`Ver ${car.brand} ${car.model}`} className={`h-2 rounded-full transition-all ${index === featuredIndex ? 'w-8 bg-red-600' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}</div><button onClick={() => setFeaturedIndex(index => (index + 1) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Próximo destaque"><ArrowRight className="h-4 w-4" /></button></div> : <span />}
                 <button onClick={() => onSelectCar(featured)} className="inline-flex min-h-11 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white sm:hidden">Conhecer <ChevronRight className="h-4 w-4" /></button>
@@ -272,7 +236,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
           <div>
             <p className="mb-3 text-xs font-black uppercase tracking-[.2em] text-red-100">Compra transparente</p>
             <h2 className="max-w-lg text-4xl font-black leading-[.98] tracking-[-.045em] sm:text-5xl">Você vê o carro antes mesmo de chegar à loja.</h2>
-            <p className="mt-5 max-w-xl leading-7 text-red-50">Exterior, interior, pontos de interesse e avarias documentadas em uma experiência 360° pensada para celular.</p>
+            <p className="mt-5 max-w-xl leading-7 text-red-50">Fotos, detalhes, pontos de interesse e observações documentadas para você conhecer melhor cada veículo.</p>
           </div>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">

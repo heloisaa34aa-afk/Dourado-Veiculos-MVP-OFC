@@ -1,36 +1,39 @@
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
 
+async function getProfile(): Promise<UserProfile | null> {
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError || !session?.user) return null;
+
+  const user = session.user;
+  const { data: adminData } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle();
+
+  const role: UserProfile['role'] = adminData ? 'admin' : 'client';
+
+  return {
+    id: user.id,
+    email: user.email || '',
+    name: user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || '',
+    phone: user.user_metadata?.phone || '',
+    city: user.user_metadata?.city || '',
+    role,
+  };
+}
+
 export const authService = {
-  async getProfile(): Promise<UserProfile | null> {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.user) {
-      return null;
-    }
+  getProfile,
 
-    const user = session.user;
-    
-    // Check if user is an admin in admins table
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    const role = adminData ? 'admin' : 'client';
-
-    const name = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0] || '';
-    const phone = user.user_metadata?.phone || '';
-    const city = user.user_metadata?.city || '';
-
-    return {
-      id: user.id,
-      email: user.email || '',
-      name,
-      phone,
-      city,
-      role
-    };
+  onAuthStateChange(callback: (profile: UserProfile | null) => void) {
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      window.setTimeout(() => {
+        void getProfile().then(callback).catch(() => undefined);
+      }, 0);
+    });
+    return () => data.subscription.unsubscribe();
   },
 
   async signUp(email: string, password: string, metadata: { name: string; phone: string; city: string }): Promise<UserProfile> {

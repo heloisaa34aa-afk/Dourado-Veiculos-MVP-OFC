@@ -514,8 +514,8 @@ export default function AdminPanel({
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
       
       {/* Sidebar navigation */}
-      <aside className="w-full md:w-64 bg-slate-900 text-white shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-slate-800">
-        <div className="p-6 border-b border-slate-800">
+      <aside className="sticky top-[72px] z-50 w-full md:static md:w-64 bg-slate-900 text-white shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-slate-800">
+        <div className="hidden p-6 border-b border-slate-800 md:block">
           <div className="flex items-center gap-2">
             <div className="bg-red-600 text-white p-2 rounded-xl">
               <Car className="w-5 h-5" />
@@ -527,7 +527,27 @@ export default function AdminPanel({
           </div>
         </div>
 
-        <nav className="p-4 flex flex-row md:flex-col gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar">
+        <div className="p-3 md:hidden">
+          <label className="mb-1.5 block text-[10px] font-black uppercase tracking-[.16em] text-slate-400">Área administrativa</label>
+          <select
+            aria-label="Navegar no painel administrativo"
+            value={activeSection}
+            onChange={(event) => setActiveSection(event.target.value as typeof activeSection)}
+            className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 text-sm font-bold text-white outline-none focus:border-red-500"
+          >
+            <option value="dashboard">Painel geral</option>
+            <option value="vehicles">Gerenciar veículos ({cars.length})</option>
+            <option value="vehicle360">Veículo 360°</option>
+            <option value="banners">Banners e promoções</option>
+            <option value="salesChat">Conversas da IA</option>
+            {trackingLabEnabled && <option value="trackingLab">Tracking Lab 360</option>}
+            <option value="messages">Leads e mensagens</option>
+            <option value="users">Usuários</option>
+            <option value="settings">Configurações</option>
+          </select>
+        </div>
+
+        <nav className="hidden p-4 md:flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar">
           <button
             onClick={() => setActiveSection('dashboard')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full ${
@@ -648,7 +668,7 @@ export default function AdminPanel({
       </aside>
 
       {/* Main dashboard viewport */}
-      <main className={`flex-1 w-full overflow-x-hidden ${
+      <main className={`flex-1 min-w-0 w-full overflow-x-hidden ${
         activeSection === 'trackingLab' 
           ? 'h-[calc(100vh-64px)] flex flex-col min-h-0 min-w-0' // assuming 64px is header or we just use h-full if admin panel has no top header for desktop
           : 'p-4 sm:p-8 max-w-7xl mx-auto space-y-8'
@@ -657,7 +677,7 @@ export default function AdminPanel({
         {/* Top welcome banner */}
         <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
           <div>
-            <h2 className="font-extrabold text-3xl text-slate-900 tracking-tight">
+            <h2 className="font-extrabold text-2xl text-slate-900 tracking-tight sm:text-3xl">
               {activeSection === 'dashboard' && 'Visão Geral do Negócio'}
               {activeSection === 'vehicles' && 'Gerenciamento de Inventário'}
               {activeSection === 'messages' && 'Contatos e Leads Recentes'}
