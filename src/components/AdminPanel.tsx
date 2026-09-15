@@ -1515,13 +1515,15 @@ export default function AdminPanel({
                         <div>
                           <label className="block text-xs font-bold text-slate-600 mb-1">Preço de Venda (R$)</label>
                           <input
-                            type="number"
-                            min="0"
-                            step="100"
+                            type="text"
+                            inputMode="numeric"
                             required
-                            value={formPrice}
-                            onChange={(e) => setFormPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                            placeholder="Ex: 129900"
+                            value={formPrice === '' ? '' : Number(formPrice).toLocaleString('pt-BR')}
+                            onChange={(e) => {
+                              const digits = e.target.value.replace(/\D/g, '');
+                              setFormPrice(digits ? Number(digits) : '');
+                            }}
+                            placeholder="Ex: 129.900"
                             className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-red-600"
                           />
                         </div>

@@ -19,6 +19,11 @@ describe('extensão Dourado Vendas', () => {
     expect(vehicle.sold).toBe(false);
   });
 
+  it('usa o preço real e não interpreta o indicador de promoção como valor', () => {
+    const vehicle = normalizeVehicle({ ...row, price: '129900.00', new_price: true });
+    expect(vehicle.price).toBe(129900);
+  });
+
   it('separa texto, fotos, vídeo e link em mensagens organizadas', () => {
     const sequence = composeVehicleSequence(normalizeVehicle(row), 'https://dourado.test', 'details', 'Ruben');
     expect(sequence[0]).toContain('👋');

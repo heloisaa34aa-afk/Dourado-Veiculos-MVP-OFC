@@ -153,16 +153,32 @@ async function loadInventory() {
   elements.inventoryStatus.textContent = 'Sincronizando estoque...';
   elements.refreshButton.disabled = true;
   try {
-    const select = 'id,brand,model,version,year,price,mileage,transmission,fuel,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order),vehicle_videos(video_url,provider)';
-    const response = await fetch(`${state.config.supabaseUrl.replace(/\/$/, '')}/rest/v1/vehicles?select=${encodeURIComponent(select)}&order=featured.desc,created_at.desc`, {
-      headers: {
-        apikey: state.config.supabaseAnonKey,
-        Authorization: `Bearer ${state.config.supabaseAnonKey}`
-      }
-    });
-    if (!response.ok) throw new Error(`Catálogo indisponível (${response.status})`);
-    const rows = await response.json();
-    state.vehicles = rows.map(normalizeVehicle).filter(vehicle => !vehicle.sold);
+    const baseUrl = `${state.config.supabaseUrl.replace(/\/$/, '')}/rest/v1`;
+    const headers = {
+      apikey: state.config.supabaseAnonKey,
+      Authorization: `Bearer ${state.config.supabaseAnonKey}`
+    };
+    const vehicleSelect = 'id,brand,model,version,year,price,mileage,transmission,fuel,cover_image,featured,sold,status,created_at,categories(name),vehicle_images(image_url,display_order)';
+    const [vehicleResponse, videoResponse] = await Promise.all([
+      fetch(`${baseUrl}/vehicles?select=${encodeURIComponent(vehicleSelect)}&order=featured.desc,created_at.desc`, { headers }),
+      fetch(`${baseUrl}/vehicle_videos?select=${encodeURIComponent('vehicle_id,video_url,provider')}`, { headers }).catch(() => null)
+    ]);
+    if (!vehicleResponse.ok) {
+      const details = await vehicleResponse.json().catch(() => null);
+      throw new Error(details?.message || `Catálogo indisponível (${vehicleResponse.status})`);
+    }
+
+    const rows = await vehicleResponse.json();
+    const videoRows = videoResponse?.ok ? await videoResponse.json() : [];
+    const videosByVehicle = videoRows.reduce((map, video) => {
+      const current = map.get(video.vehicle_id) || [];
+      current.push(video);
+      map.set(video.vehicle_id, current);
+      return map;
+    }, new Map());
+    state.vehicles = rows
+      .map(row => normalizeVehicle({ ...row, vehicle_videos: videosByVehicle.get(row.id) || [] }))
+      .filter(vehicle => !vehicle.sold);
     renderVehicles();
   } catch (error) {
     state.vehicles = [];
