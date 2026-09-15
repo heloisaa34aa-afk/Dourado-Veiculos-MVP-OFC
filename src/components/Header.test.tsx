@@ -23,4 +23,20 @@ describe('Header admin access', () => {
     fireEvent.click(button);
     expect(screen.getByTestId('location')).toHaveTextContent('/admin');
   });
+
+  it('offers the installed shortcut only to authenticated administrators', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <Header userProfile={null} onLogout={vi.fn()} />
+      </MemoryRouter>,
+    );
+    expect(screen.queryByRole('button', { name: 'Instalar painel Dourado Admin' })).not.toBeInTheDocument();
+
+    rerender(
+      <MemoryRouter>
+        <Header userProfile={{ id: 'admin', email: 'admin@example.com', role: 'admin' }} onLogout={vi.fn()} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('button', { name: 'Instalar painel Dourado Admin' })).toBeInTheDocument();
+  });
 });
