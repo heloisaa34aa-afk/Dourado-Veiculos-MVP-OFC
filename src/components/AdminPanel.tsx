@@ -106,6 +106,9 @@ export default function AdminPanel({
   const [formModel, setFormModel] = useState('');
   const [formVersion, setFormVersion] = useState('');
   const [formPrice, setFormPrice] = useState<number | ''>('');
+  const [formFipePrice, setFormFipePrice] = useState<number | ''>('');
+  const [formMarketPrice, setFormMarketPrice] = useState<number | ''>('');
+  const [formReferencePriceUpdatedAt, setFormReferencePriceUpdatedAt] = useState('');
   const [formYear, setFormYear] = useState('');
   const [formYearFabricacao, setFormYearFabricacao] = useState('2023');
   const [formYearModelo, setFormYearModelo] = useState('2023');
@@ -274,6 +277,9 @@ export default function AdminPanel({
       setFormModel(carToEdit.model);
       setFormVersion(carToEdit.version);
       setFormPrice(carToEdit.price || 0);
+      setFormFipePrice(carToEdit.fipePrice || '');
+      setFormMarketPrice(carToEdit.marketPrice || '');
+      setFormReferencePriceUpdatedAt(carToEdit.referencePriceUpdatedAt || '');
       const yearStr = carToEdit.year ? String(carToEdit.year) : '2023';
       setFormYear(yearStr);
       const parts = yearStr.split('/');
@@ -323,6 +329,9 @@ export default function AdminPanel({
       setFormModel('');
       setFormVersion('');
       setFormPrice('');
+      setFormFipePrice('');
+      setFormMarketPrice('');
+      setFormReferencePriceUpdatedAt('');
       setFormYear('2023');
       setFormYearFabricacao('2023');
       setFormYearModelo('2023');
@@ -397,6 +406,9 @@ export default function AdminPanel({
       model: formModel,
       version: formVersion,
       price: Number(formPrice) || 0,
+      fipePrice: formFipePrice === '' ? undefined : Number(formFipePrice),
+      marketPrice: formMarketPrice === '' ? undefined : Number(formMarketPrice),
+      referencePriceUpdatedAt: formReferencePriceUpdatedAt || undefined,
       year: combinedYear,
       km: Number(formKm),
       gearbox: formGearbox,
@@ -1656,6 +1668,21 @@ export default function AdminPanel({
                       </div>
                     </div>
 
+                    <div className="space-y-4 pt-2">
+                      <div className="border-b border-slate-100 pb-2">
+                        <h4 className="text-xs font-extrabold uppercase tracking-wider text-red-600">Preços de referência</h4>
+                        <p className="mt-1 text-xs text-slate-400">Campos opcionais. Informe apenas valores consultados; o site não cria estimativas automáticas.</p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                        <MoneyReferenceInput label="Preço FIPE (R$)" value={formFipePrice} onChange={setFormFipePrice} placeholder="Ex: 135.900" />
+                        <MoneyReferenceInput label="Média de mercado (R$)" value={formMarketPrice} onChange={setFormMarketPrice} placeholder="Ex: 139.900" />
+                        <div>
+                          <label className="mb-1 block text-xs font-bold text-slate-600">Data da consulta</label>
+                          <input type="date" value={formReferencePriceUpdatedAt} onChange={(event) => setFormReferencePriceUpdatedAt(event.target.value)} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-red-600 focus:outline-none" />
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Technical Specifications */}
                     <div className="space-y-4 pt-2">
                       <h4 className="text-xs uppercase font-extrabold text-red-600 tracking-wider border-b border-slate-100 pb-2">
@@ -2625,4 +2652,21 @@ export default function AdminPanel({
 
     </div>
   );
+}
+
+function MoneyReferenceInput({ label, value, onChange, placeholder }: { label: string; value: number | ''; onChange: (value: number | '') => void; placeholder: string }) {
+  return <div>
+    <label className="mb-1 block text-xs font-bold text-slate-600">{label}</label>
+    <input
+      type="text"
+      inputMode="numeric"
+      value={value === '' ? '' : Number(value).toLocaleString('pt-BR')}
+      onChange={(event) => {
+        const digits = event.target.value.replace(/\D/g, '');
+        onChange(digits ? Number(digits) : '');
+      }}
+      placeholder={placeholder}
+      className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-red-600 focus:outline-none"
+    />
+  </div>;
 }

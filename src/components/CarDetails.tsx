@@ -9,7 +9,7 @@ import {
   Check, Send, CheckCircle2, MapPin, Sparkles, MessageCircle,
   Play, Pause, ChevronLeft, ChevronRight, RotateCcw, Info,
   X, Maximize2, ZoomIn, ZoomOut, AlertTriangle, XCircle,
-  ShieldCheck, FileText, ChevronDown, ChevronUp, Camera, AlertCircle, Share2
+  ShieldCheck, FileText, ChevronDown, ChevronUp, Camera, AlertCircle, Share2, TrendingUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Car, LeadMessage, } from '../types';
@@ -36,6 +36,45 @@ interface CarDetailsProps {
   banners?: SiteBanner[];
   relatedCars?: Car[];
   onSelectCar?: (car: Car) => void;
+}
+
+function VehiclePriceReference({ car }: { car: Car }) {
+  const references = [
+    { label: 'Preço Dourado', value: car.price, color: 'bg-red-600' },
+    { label: 'Tabela FIPE', value: car.fipePrice || 0, color: 'bg-slate-950' },
+    { label: 'Média de mercado', value: car.marketPrice || 0, color: 'bg-blue-600' },
+  ].filter(item => item.value > 0);
+  if (!car.fipePrice && !car.marketPrice) return null;
+
+  const maximum = Math.max(...references.map(item => item.value));
+  const comparisonValue = car.fipePrice || car.marketPrice || 0;
+  const difference = comparisonValue - car.price;
+  const comparisonName = car.fipePrice ? 'FIPE' : 'média de mercado';
+  const formattedDate = car.referencePriceUpdatedAt
+    ? car.referencePriceUpdatedAt.split('-').reverse().join('/')
+    : '';
+
+  return <section className="mt-8 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm">
+    <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+      <div><p className="flex items-center gap-2 text-xs font-black uppercase tracking-[.16em] text-red-600"><TrendingUp className="h-4 w-4" /> Referência de preço</p><h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950">Compare antes de decidir</h2></div>
+      {difference !== 0 && <div className={`self-start rounded-full px-4 py-2 text-xs font-extrabold ${difference > 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+        {formatVehiclePrice(Math.abs(difference))} {difference > 0 ? 'abaixo' : 'acima'} da {comparisonName}
+      </div>}
+    </div>
+    <div className="grid gap-7 p-5 sm:p-7 lg:grid-cols-[1.35fr_.65fr] lg:items-center">
+      <div className="space-y-5" role="img" aria-label="Gráfico comparativo de preços do veículo">
+        {references.map(item => <div key={item.label}>
+          <div className="mb-2 flex items-center justify-between gap-3 text-sm"><span className="font-bold text-slate-700">{item.label}</span><strong className="text-slate-950">{formatVehiclePrice(item.value)}</strong></div>
+          <div className="h-3 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${item.color}`} style={{ width: `${Math.max(8, (item.value / maximum) * 100)}%` }} /></div>
+        </div>)}
+      </div>
+      <div className="rounded-2xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
+        <strong className="block text-base text-slate-950">Valores informados pela loja</strong>
+        <p className="mt-2">As referências ajudam na comparação, mas podem variar conforme versão, região, conservação e data da consulta.</p>
+        {formattedDate && <p className="mt-3 text-xs font-bold uppercase tracking-wide text-slate-500">Consultado em {formattedDate}</p>}
+      </div>
+    </div>
+  </section>;
 }
 
 
@@ -429,7 +468,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
           </div>
         </div>
 
-        
+        <VehiclePriceReference car={car} />
 
         {/* Content sections: About, Features & Technical Tables */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

@@ -12,6 +12,9 @@ export interface Car {
   model: string;
   version: string;
   price: number;
+  fipePrice?: number;
+  marketPrice?: number;
+  referencePriceUpdatedAt?: string;
   year: string; // e.g. "2022/2023"
   km: number;
   gearbox: 'Automático' | 'Manual' | string;

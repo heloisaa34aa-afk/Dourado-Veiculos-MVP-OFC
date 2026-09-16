@@ -29,6 +29,9 @@ export function mapDbToCar(v: any): Car {
     model: v.model,
     version: v.version || '',
     price: Number(v.price || 0),
+    fipePrice: v.fipe_price == null ? undefined : Number(v.fipe_price),
+    marketPrice: v.market_price == null ? undefined : Number(v.market_price),
+    referencePriceUpdatedAt: v.reference_price_updated_at || undefined,
     year: v.year,
     km: Number(v.mileage || 0),
     gearbox: v.transmission || '',
@@ -144,6 +147,9 @@ export const vehicleService = {
         version: car.version,
         year: parseYear(car.year),
         price: car.price,
+        fipe_price: car.fipePrice || null,
+        market_price: car.marketPrice || null,
+        reference_price_updated_at: car.referencePriceUpdatedAt || null,
         mileage: car.km,
         fuel: car.fuel,
         transmission: car.gearbox,
@@ -211,6 +217,9 @@ export const vehicleService = {
     if (car.version !== undefined) dbData.version = car.version;
     if (car.year !== undefined) dbData.year = parseYear(car.year);
     if (car.price !== undefined) dbData.price = car.price;
+    if (Object.prototype.hasOwnProperty.call(car, 'fipePrice')) dbData.fipe_price = car.fipePrice || null;
+    if (Object.prototype.hasOwnProperty.call(car, 'marketPrice')) dbData.market_price = car.marketPrice || null;
+    if (Object.prototype.hasOwnProperty.call(car, 'referencePriceUpdatedAt')) dbData.reference_price_updated_at = car.referencePriceUpdatedAt || null;
     if (car.km !== undefined) dbData.mileage = car.km;
     if (car.fuel !== undefined) dbData.fuel = car.fuel;
     if (car.gearbox !== undefined) dbData.transmission = car.gearbox;
