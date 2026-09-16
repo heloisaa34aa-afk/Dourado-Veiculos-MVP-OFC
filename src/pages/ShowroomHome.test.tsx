@@ -14,7 +14,7 @@ describe('ShowroomHome discovery navigation', () => {
 
   it('leva a busca da Home para o estoque com parâmetros compartilháveis', async () => {
     render(<MemoryRouter initialEntries={['/']}><Routes><Route path="*" element={<><ShowroomHome cars={[]} loading={false} carsError={null} banners={[]} onSelectCar={vi.fn()} onSubmitLead={vi.fn()} /><LocationProbe /></>} /></Routes></MemoryRouter>);
-    fireEvent.change(screen.getByPlaceholderText('Busque por modelo, versão ou combustível'), { target: { value: 'Corolla' } });
+    fireEvent.change(screen.getByPlaceholderText('Modelo, versão ou combustível'), { target: { value: 'Corolla' } });
     fireEvent.click(screen.getByRole('button', { name: /Buscar no estoque/i }));
     await waitFor(() => expect(screen.getByTestId('location')).toHaveTextContent('/estoque?q=Corolla'));
   });
