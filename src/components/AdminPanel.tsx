@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { 
   Plus, Search, Edit2, Trash2, Check, X, ShieldAlert,
   Car, Eye, Phone, TrendingUp, BarChart3, Settings, 
@@ -25,6 +25,8 @@ import { BannerManager } from './BannerManager';
 import { SalesChatInsights } from './SalesChatInsights';
 import { adminUsersService } from '../services/adminUsers.service';
 import { COMMON_VEHICLE_FEATURES, VEHICLE_FEATURE_GROUPS } from '../config/vehicleFeaturePresets';
+import { AdminNotificationCenter } from './AdminNotificationCenter';
+import type { AdminNotificationTarget } from '../services/adminNotification.service';
 
 const trackingLabEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_TRACKING_LAB === 'true';
 
@@ -50,6 +52,7 @@ export default function AdminPanel({
 }: AdminPanelProps) {
   // Navigation active tab
   const [activeSection, setActiveSection] = useState<'dashboard' | 'vehicles' | 'messages' | 'quotes' | 'users' | 'settings' | 'vehicle360' | 'banners' | 'salesChat' | 'trackingLab'>('dashboard');
+  const openNotificationTarget = useCallback((target: AdminNotificationTarget) => setActiveSection(target), []);
 
   // Search and filter inside tables
   const [vehicleSearch, setVehicleSearch] = useState('');
@@ -554,6 +557,7 @@ export default function AdminPanel({
             <option value="salesChat">Conversas da IA</option>
             {trackingLabEnabled && <option value="trackingLab">Tracking Lab 360</option>}
             <option value="messages">Leads e mensagens</option>
+            <option value="quotes">Simulações e orçamentos</option>
             <option value="users">Usuários</option>
             <option value="settings">Configurações</option>
           </select>
@@ -642,6 +646,18 @@ export default function AdminPanel({
           </button>
 
           <button
+            onClick={() => setActiveSection('quotes')}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full ${
+              activeSection === 'quotes'
+                ? 'bg-red-600 text-white shadow-md'
+                : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Simulações ({quotesList.length})</span>
+          </button>
+
+          <button
             onClick={() => setActiveSection('users')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full ${
               activeSection === 'users'
@@ -693,6 +709,7 @@ export default function AdminPanel({
               {activeSection === 'dashboard' && 'Visão Geral do Negócio'}
               {activeSection === 'vehicles' && 'Gerenciamento de Inventário'}
               {activeSection === 'messages' && 'Contatos e Leads Recentes'}
+              {activeSection === 'quotes' && 'Simulações e Orçamentos'}
               {activeSection === 'users' && 'Gerenciamento de Usuários'}
               {activeSection === 'settings' && 'Configurações da Concessionária'}
               {activeSection === 'vehicle360' && 'Módulo Inspetor Veículo 360°'}
@@ -704,6 +721,7 @@ export default function AdminPanel({
               {activeSection === 'dashboard' && 'Acompanhe as estatísticas de cliques, contatos e distribuição do seu estoque.'}
               {activeSection === 'vehicles' && 'Adicione novos carros, edite especificações e marque como vendido.'}
               {activeSection === 'messages' && 'Revise as solicitações de proposta recebidas do formulário de contato do site.'}
+              {activeSection === 'quotes' && 'Acompanhe as solicitações de financiamento e orçamento recebidas.'}
               {activeSection === 'users' && 'Visualize os clientes e administradores registrados na plataforma.'}
               {activeSection === 'settings' && 'Gerencie informações da loja, canais de atendimento e canais sociais.'}
               {activeSection === 'vehicle360' && 'Gerencie rotação de imagens 360° e marque os pontos de avarias para exibição pública.'}
@@ -714,6 +732,7 @@ export default function AdminPanel({
           </div>
 
           <div className="flex items-center gap-3">
+            <AdminNotificationCenter onOpen={openNotificationTarget} />
             {activeSection === 'vehicles' && (
               <motion.button
                 whileHover={{ scale: 1.02 }}
