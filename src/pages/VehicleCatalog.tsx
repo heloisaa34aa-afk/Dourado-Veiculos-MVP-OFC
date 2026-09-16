@@ -21,11 +21,12 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
   const results = useMemo(() => filterCatalog(cars, filters), [cars, filters]);
   const brands = useMemo(() => Array.from(new Set(available.map(car => car.brand))).sort(), [available]);
   const categories = useMemo(() => Array.from(new Set(available.map(car => String(car.category)))).sort(), [available]);
+  const fuels = useMemo(() => Array.from(new Set(available.map(car => String(car.fuel)).filter(Boolean))).sort(), [available]);
   const years = useMemo(() => Array.from(new Set(available.map(vehicleYear).filter(Boolean))).sort((a, b) => b - a), [available]);
 
   const update = (patch: Partial<CatalogFilters>) => navigate(catalogUrl({ ...filters, ...patch }), { replace: true });
   const clear = () => navigate('/estoque', { replace: true });
-  const activeFilterCount = [filters.brand, filters.category, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxMileage].filter(value => value !== '' && value !== undefined).length;
+  const activeFilterCount = [filters.brand, filters.category, filters.fuel, filters.condition, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage].filter(value => value !== '' && value !== undefined).length;
 
   return (
     <main className="min-h-screen bg-[#f3f4f6] text-slate-950">
@@ -47,7 +48,7 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
       <div className="mx-auto grid max-w-[1380px] gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[280px_1fr] lg:py-12">
         <aside className="hidden self-start rounded-[26px] border border-slate-200 bg-white p-5 lg:block lg:sticky lg:top-28">
           <div className="mb-5 flex items-center justify-between"><h2 className="font-black">Filtros</h2>{activeFilterCount > 0 && <button onClick={clear} className="text-xs font-bold text-red-600">Limpar</button>}</div>
-          <FilterFields filters={filters} brands={brands} categories={categories} years={years} update={update} />
+          <FilterFields filters={filters} brands={brands} categories={categories} fuels={fuels} years={years} update={update} />
         </aside>
 
         <section className="min-w-0">
@@ -68,7 +69,7 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
       {mobileFiltersOpen && <div className="fixed inset-0 z-[1000] flex items-end bg-black/65 lg:hidden" role="dialog" aria-modal="true" aria-label="Filtros do estoque" onClick={() => setMobileFiltersOpen(false)}>
         <div className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[30px] bg-white p-5 pb-8" onClick={event => event.stopPropagation()}>
           <div className="mb-5 flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-wider text-red-600">Refine sua busca</p><h2 className="text-2xl font-black">Filtros</h2></div><button onClick={() => setMobileFiltersOpen(false)} className="grid h-11 w-11 place-items-center rounded-full bg-slate-100" aria-label="Fechar filtros"><X className="h-5 w-5" /></button></div>
-          <FilterFields filters={filters} brands={brands} categories={categories} years={years} update={update} />
+          <FilterFields filters={filters} brands={brands} categories={categories} fuels={fuels} years={years} update={update} />
           <div className="mt-6 grid grid-cols-2 gap-3"><button onClick={clear} className="min-h-12 rounded-2xl border border-slate-300 font-bold">Limpar</button><button onClick={() => setMobileFiltersOpen(false)} className="min-h-12 rounded-2xl bg-red-600 font-bold text-white">Ver {results.length} veículos</button></div>
         </div>
       </div>}
@@ -76,13 +77,20 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
   );
 }
 
-function FilterFields({ filters, brands, categories, years, update }: { filters: CatalogFilters; brands: string[]; categories: string[]; years: number[]; update: (patch: Partial<CatalogFilters>) => void }) {
+function FilterFields({ filters, brands, categories, fuels, years, update }: { filters: CatalogFilters; brands: string[]; categories: string[]; fuels: string[]; years: number[]; update: (patch: Partial<CatalogFilters>) => void }) {
   return <div className="space-y-5">
+    <div>
+      <span className="mb-2 block text-sm font-bold">Condição</span>
+      <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+        {([['', 'Todos'], ['zero-km', '0 km'], ['used', 'Usados']] as const).map(([value, label]) => <button key={label} type="button" onClick={() => update({ condition: value })} className={`min-h-10 rounded-lg px-2 text-xs font-extrabold transition ${filters.condition === value ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-600 hover:bg-white'}`}>{label}</button>)}
+      </div>
+    </div>
     <FilterSelect label="Marca" value={filters.brand} onChange={value => update({ brand: value })} options={brands} />
     <FilterSelect label="Categoria" value={filters.category} onChange={value => update({ category: value })} options={categories} />
-    <div><span className="mb-2 block text-sm font-bold">Faixa de preço</span><div className="grid grid-cols-2 gap-2"><NumberFilter label="Mínimo" value={filters.minPrice} onChange={value => update({ minPrice: value })} /><NumberFilter label="Máximo" value={filters.maxPrice} onChange={value => update({ maxPrice: value })} /></div></div>
-    <label className="block"><span className="mb-2 block text-sm font-bold">Ano mínimo</span><select value={filters.minYear ?? ''} onChange={event => update({ minYear: event.target.value ? Number(event.target.value) : undefined })} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todos</option>{years.map(year => <option key={year} value={year}>{year}</option>)}</select></label>
-    <label className="block"><span className="mb-2 block text-sm font-bold">Quilometragem máxima</span><select value={filters.maxMileage ?? ''} onChange={event => update({ maxMileage: event.target.value ? Number(event.target.value) : undefined })} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todas</option><option value="0">Somente 0 km</option><option value="30000">Até 30.000 km</option><option value="60000">Até 60.000 km</option><option value="100000">Até 100.000 km</option></select></label>
+    <FilterSelect label="Combustível" value={filters.fuel} onChange={value => update({ fuel: value })} options={fuels} />
+    <div><span className="mb-2 block text-sm font-bold">Faixa de preço</span><div className="grid grid-cols-2 gap-2"><NumberFilter label="Mínimo" prefix="R$" value={filters.minPrice} onChange={value => update({ minPrice: value })} /><NumberFilter label="Máximo" prefix="R$" value={filters.maxPrice} onChange={value => update({ maxPrice: value })} /></div></div>
+    <div><span className="mb-2 block text-sm font-bold">Ano</span><div className="grid grid-cols-2 gap-2"><YearFilter label="De" value={filters.minYear} years={years} onChange={value => update({ minYear: value })} /><YearFilter label="Até" value={filters.maxYear} years={years} onChange={value => update({ maxYear: value })} /></div></div>
+    <div><span className="mb-2 block text-sm font-bold">Quilometragem</span><div className="grid grid-cols-2 gap-2"><NumberFilter label="Mínima" suffix="km" value={filters.minMileage} onChange={value => update({ minMileage: value })} /><NumberFilter label="Máxima" suffix="km" value={filters.maxMileage} onChange={value => update({ maxMileage: value })} /></div></div>
   </div>;
 }
 
@@ -90,8 +98,12 @@ function FilterSelect({ label, value, onChange, options }: { label: string; valu
   return <label className="block"><span className="mb-2 block text-sm font-bold">{label}</span><select aria-label={label} value={value} onChange={event => onChange(event.target.value)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3"><option value="">Todas</option>{options.map(option => <option key={option}>{option}</option>)}</select></label>;
 }
 
-function NumberFilter({ label, value, onChange }: { label: string; value?: number; onChange: (value?: number) => void }) {
-  return <label><span className="sr-only">Preço {label.toLowerCase()}</span><input type="number" inputMode="numeric" min="0" step="1000" value={value ?? ''} onChange={event => onChange(event.target.value ? Number(event.target.value) : undefined)} placeholder={label} className="min-h-12 w-full rounded-xl border border-slate-300 px-3 text-sm" /></label>;
+function NumberFilter({ label, value, onChange, prefix, suffix }: { label: string; value?: number; onChange: (value?: number) => void; prefix?: string; suffix?: string }) {
+  return <label className="relative"><span className="sr-only">{label}</span>{prefix && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">{prefix}</span>}<input type="number" inputMode="numeric" min="0" step="1000" value={value ?? ''} onChange={event => onChange(event.target.value ? Number(event.target.value) : undefined)} placeholder={label} className={`min-h-12 w-full rounded-xl border border-slate-300 text-sm ${prefix ? 'pl-9 pr-3' : suffix ? 'pl-3 pr-9' : 'px-3'}`} />{suffix && <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">{suffix}</span>}</label>;
+}
+
+function YearFilter({ label, value, years, onChange }: { label: string; value?: number; years: number[]; onChange: (value?: number) => void }) {
+  return <label><span className="sr-only">Ano {label.toLowerCase()}</span><select value={value ?? ''} onChange={event => onChange(event.target.value ? Number(event.target.value) : undefined)} className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm"><option value="">{label}</option>{years.map(year => <option key={year} value={year}>{year}</option>)}</select></label>;
 }
 
 function CatalogMessage({ title, copy, action }: { title: string; copy: string; action?: () => void }) {

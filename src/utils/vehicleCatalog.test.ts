@@ -18,24 +18,31 @@ describe('vehicleCatalog', () => {
   ];
 
   it('lê filtros válidos da URL e ignora ordenação inválida', () => {
-    const filters = readCatalogFilters(new URLSearchParams('q=corolla&marca=Toyota&anoMin=2023&kmMax=10000&ordem=invalida'));
-    expect(filters).toMatchObject({ query: 'corolla', brand: 'Toyota', minYear: 2023, maxMileage: 10000, sort: 'recent' });
+    const filters = readCatalogFilters(new URLSearchParams('q=corolla&marca=Toyota&combustivel=Flex&condicao=used&anoMin=2023&anoMax=2026&kmMin=1000&kmMax=10000&ordem=invalida'));
+    expect(filters).toMatchObject({ query: 'corolla', brand: 'Toyota', fuel: 'Flex', condition: 'used', minYear: 2023, maxYear: 2026, minMileage: 1000, maxMileage: 10000, sort: 'recent' });
   });
 
   it('filtra texto, categoria, preço, ano e quilometragem sem exibir vendidos', () => {
-    const result = filterCatalog(cars, { query: 'corolla', brand: 'Toyota', category: 'Sedan', minPrice: 100000, maxPrice: 150000, minYear: 2024, maxMileage: 10000, sort: 'recent' });
+    const result = filterCatalog(cars, { query: 'corolla', brand: 'Toyota', category: 'Sedan', fuel: 'Flex', condition: 'used', minPrice: 100000, maxPrice: 150000, minYear: 2024, maxYear: 2026, minMileage: 1000, maxMileage: 10000, sort: 'recent' });
     expect(result.map(item => item.id)).toEqual(['corolla']);
   });
 
   it('ordena por preço, quilometragem e ano', () => {
-    const base = { query: '', brand: '', category: '' };
+    const base = { query: '', brand: '', category: '', fuel: '', condition: '' as const };
     expect(filterCatalog(cars, { ...base, sort: 'price-asc' }).map(item => item.id)).toEqual(['argo', 'pulse', 'corolla']);
     expect(filterCatalog(cars, { ...base, sort: 'km-asc' }).map(item => item.id)).toEqual(['corolla', 'pulse', 'argo']);
     expect(filterCatalog(cars, { ...base, sort: 'year-desc' }).map(item => item.id)[0]).toBe('corolla');
   });
 
+  it('separa veículos usados de veículos zero quilômetro', () => {
+    const inventory = [car({ id: 'new', km: 0 }), car({ id: 'used', km: 12000 })];
+    const base = { query: '', brand: '', category: '', fuel: '', sort: 'recent' as const };
+    expect(filterCatalog(inventory, { ...base, condition: 'zero-km' }).map(item => item.id)).toEqual(['new']);
+    expect(filterCatalog(inventory, { ...base, condition: 'used' }).map(item => item.id)).toEqual(['used']);
+  });
+
   it('mantém filtros compartilháveis na URL', () => {
-    expect(catalogUrl({ query: 'pulse', category: 'SUV', maxPrice: 100000, sort: 'price-asc' })).toBe('/estoque?q=pulse&categoria=SUV&precoMax=100000&ordem=price-asc');
+    expect(catalogUrl({ query: 'pulse', category: 'SUV', fuel: 'Flex', condition: 'used', maxPrice: 100000, sort: 'price-asc' })).toBe('/estoque?q=pulse&categoria=SUV&combustivel=Flex&condicao=used&precoMax=100000&ordem=price-asc');
   });
 
   it('deriva faixas de preço do estoque real', () => {

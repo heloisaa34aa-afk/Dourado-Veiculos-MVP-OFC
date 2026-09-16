@@ -1,14 +1,19 @@
 import type { Car } from '../types';
 
 export type CatalogSort = 'recent' | 'price-asc' | 'price-desc' | 'km-asc' | 'year-desc';
+export type VehicleCondition = '' | 'zero-km' | 'used';
 
 export interface CatalogFilters {
   query: string;
   brand: string;
   category: string;
+  fuel: string;
+  condition: VehicleCondition;
   minPrice?: number;
   maxPrice?: number;
   minYear?: number;
+  maxYear?: number;
+  minMileage?: number;
   maxMileage?: number;
   sort: CatalogSort;
 }
@@ -38,9 +43,13 @@ export function readCatalogFilters(params: URLSearchParams): CatalogFilters {
     query: params.get('q')?.trim() || '',
     brand: params.get('marca')?.trim() || '',
     category: params.get('categoria')?.trim() || '',
+    fuel: params.get('combustivel')?.trim() || '',
+    condition: params.get('condicao') === 'zero-km' || params.get('condicao') === 'used' ? params.get('condicao') as VehicleCondition : '',
     minPrice: positiveNumber(params.get('precoMin')),
     maxPrice: positiveNumber(params.get('precoMax')),
     minYear: positiveNumber(params.get('anoMin')),
+    maxYear: positiveNumber(params.get('anoMax')),
+    minMileage: positiveNumber(params.get('kmMin')),
     maxMileage: positiveNumber(params.get('kmMax')),
     sort: sort && validSorts.includes(sort) ? sort : 'recent',
   };
@@ -51,13 +60,17 @@ export function filterCatalog(cars: Car[], filters: CatalogFilters) {
   return cars
     .filter(car => !car.isSold)
     .filter(car => {
-      const text = `${car.brand} ${car.model} ${car.version} ${car.year}`.toLocaleLowerCase('pt-BR');
+      const text = `${car.brand} ${car.model} ${car.version} ${car.year} ${car.fuel} ${car.category}`.toLocaleLowerCase('pt-BR');
       return (!query || text.includes(query))
         && (!filters.brand || car.brand === filters.brand)
         && (!filters.category || car.category === filters.category)
+        && (!filters.fuel || car.fuel === filters.fuel)
+        && (!filters.condition || (filters.condition === 'zero-km' ? car.km === 0 : car.km > 0))
         && (filters.minPrice === undefined || car.price >= filters.minPrice)
         && (filters.maxPrice === undefined || car.price <= filters.maxPrice)
         && (filters.minYear === undefined || vehicleYear(car) >= filters.minYear)
+        && (filters.maxYear === undefined || vehicleYear(car) <= filters.maxYear)
+        && (filters.minMileage === undefined || car.km >= filters.minMileage)
         && (filters.maxMileage === undefined || car.km <= filters.maxMileage);
     })
     .sort((a, b) => {
@@ -95,9 +108,13 @@ export function catalogUrl(filters: Partial<CatalogFilters>) {
   if (filters.query) params.set('q', filters.query);
   if (filters.brand) params.set('marca', filters.brand);
   if (filters.category) params.set('categoria', filters.category);
+  if (filters.fuel) params.set('combustivel', filters.fuel);
+  if (filters.condition) params.set('condicao', filters.condition);
   if (filters.minPrice !== undefined) params.set('precoMin', String(filters.minPrice));
   if (filters.maxPrice !== undefined) params.set('precoMax', String(filters.maxPrice));
   if (filters.minYear !== undefined) params.set('anoMin', String(filters.minYear));
+  if (filters.maxYear !== undefined) params.set('anoMax', String(filters.maxYear));
+  if (filters.minMileage !== undefined) params.set('kmMin', String(filters.minMileage));
   if (filters.maxMileage !== undefined) params.set('kmMax', String(filters.maxMileage));
   if (filters.sort && filters.sort !== 'recent') params.set('ordem', filters.sort);
   const query = params.toString();

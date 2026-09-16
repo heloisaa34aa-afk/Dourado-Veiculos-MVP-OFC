@@ -9,7 +9,7 @@ import type { SiteBanner } from '../services/banner.service';
 import CarCard from '../components/CarCard';
 import { PublicPromotion } from '../components/PublicPromotion';
 import { VehicleMatchQuiz } from '../components/VehicleMatchQuiz';
-import { catalogUrl, derivePriceBands, formatCompactPrice } from '../utils/vehicleCatalog';
+import { catalogUrl, derivePriceBands, formatCompactPrice, vehicleYear, type VehicleCondition } from '../utils/vehicleCatalog';
 
 interface ShowroomHomeProps {
   cars: Car[];
@@ -22,7 +22,9 @@ interface ShowroomHomeProps {
 
 function FeaturedVehicleMedia({ car }: { car: Car }) {
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [displayedImage, setDisplayedImage] = useState(car.images[0] || '');
   const images = car.images;
+  const targetImage = images[photoIndex % Math.max(images.length, 1)] || '';
 
   useEffect(() => {
     setPhotoIndex(0);
@@ -30,20 +32,31 @@ function FeaturedVehicleMedia({ car }: { car: Car }) {
 
   useEffect(() => {
     if (images.length < 2) return;
-    const timer = window.setInterval(() => setPhotoIndex(index => (index + 1) % images.length), 3200);
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setPhotoIndex(index => (index + 1) % images.length);
+    }, 4200);
     return () => window.clearInterval(timer);
   }, [images.length]);
 
   useEffect(() => {
-    if (images.length < 2) return;
+    if (!targetImage) {
+      setDisplayedImage('');
+      return;
+    }
+    let active = true;
     const nextImage = new Image();
-    nextImage.src = images[(photoIndex + 1) % images.length];
-  }, [images, photoIndex]);
+    const showDecodedImage = () => { if (active) setDisplayedImage(targetImage); };
+    nextImage.onload = showDecodedImage;
+    nextImage.src = targetImage;
+    if (nextImage.complete) showDecodedImage();
+    else if (typeof nextImage.decode === 'function') void nextImage.decode().then(showDecodedImage).catch(() => undefined);
+    return () => { active = false; nextImage.onload = null; };
+  }, [targetImage]);
 
   return <div className="overflow-hidden rounded-[28px] border border-white/15 bg-black/45 shadow-[0_30px_90px_rgba(0,0,0,.45)] backdrop-blur">
     <div className="relative aspect-[4/3] overflow-hidden bg-[#080a0e] sm:aspect-video">
-      {images.length > 0
-        ? <img src={images[photoIndex % images.length]} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
+      {displayedImage
+        ? <img src={displayedImage} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
         : <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400"><CarFront className="h-12 w-12" /><span className="text-sm font-bold">Foto ainda não publicada</span></div>}
 
       {images.length > 0 && <div className="pointer-events-none absolute right-3 top-3 flex min-h-9 items-center gap-1.5 rounded-full border border-white/15 bg-black/65 px-3 text-xs font-extrabold text-white backdrop-blur"><Images className="h-4 w-4" /> {photoIndex + 1}/{images.length}</div>}
@@ -56,6 +69,11 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [brand, setBrand] = useState('Todos');
+  const [condition, setCondition] = useState<VehicleCondition>('');
+  const [fuel, setFuel] = useState('');
+  const [minYear, setMinYear] = useState('');
+  const [maxMileage, setMaxMileage] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   const [financeCar, setFinanceCar] = useState('');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -70,6 +88,8 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
   const discoveryCars = useMemo(() => [...available].sort((a, b) => Number(Boolean(b.isFeatured)) - Number(Boolean(a.isFeatured)) || new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()).slice(0, 6), [available]);
   const featured = featuredCars[featuredIndex % Math.max(featuredCars.length, 1)];
   const brands = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.brand))).sort()], [available]);
+  const fuels = useMemo(() => Array.from(new Set(available.map(car => car.fuel).filter(Boolean))).sort(), [available]);
+  const years = useMemo(() => Array.from(new Set(available.map(vehicleYear).filter(Boolean))).sort((a, b) => b - a), [available]);
   const categories = useMemo(() => ['Todos', ...Array.from(new Set(available.map(car => car.category))).sort()], [available]);
   const priceBands = useMemo(() => derivePriceBands(available), [available]);
 
@@ -108,7 +128,16 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
 
   const submitCatalogSearch = (event: FormEvent) => {
     event.preventDefault();
-    navigate(catalogUrl({ query: search, brand: brand === 'Todos' ? undefined : brand, sort: 'recent' }));
+    navigate(catalogUrl({
+      query: search,
+      brand: brand === 'Todos' ? undefined : brand,
+      condition,
+      fuel: fuel || undefined,
+      minYear: minYear ? Number(minYear) : undefined,
+      maxMileage: maxMileage ? Number(maxMileage) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+      sort: 'recent',
+    }));
   };
 
   if (loading && cars.length === 0) {
@@ -166,7 +195,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
                 <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Destaque da vez</p><h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{featured.brand} {featured.model}</h2><p className="mt-1 text-sm font-semibold text-slate-500">{featured.version} · {featured.year}</p></div>
                 <button onClick={() => onSelectCar(featured)} className="hidden min-h-11 shrink-0 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-500 sm:inline-flex">Conhecer <ChevronRight className="h-4 w-4" /></button>
               </div>
-              <FeaturedVehicleMedia key={featured.id} car={featured} />
+              <FeaturedVehicleMedia car={featured} />
               <div className="mt-4 flex items-center justify-between gap-3">
                 {featuredCars.length > 1 ? <div className="flex items-center gap-2" aria-label="Veículos em destaque"><button onClick={() => setFeaturedIndex(index => (index - 1 + featuredCars.length) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Destaque anterior"><ArrowLeft className="h-4 w-4" /></button><div className="flex gap-1.5">{featuredCars.map((car, index) => <button key={car.id} onClick={() => setFeaturedIndex(index)} aria-label={`Ver ${car.brand} ${car.model}`} className={`h-2 rounded-full transition-all ${index === featuredIndex ? 'w-8 bg-red-600' : 'w-2 bg-slate-300 hover:bg-slate-500'}`} />)}</div><button onClick={() => setFeaturedIndex(index => (index + 1) % featuredCars.length)} className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-700 hover:border-red-300 hover:text-red-600" aria-label="Próximo destaque"><ArrowRight className="h-4 w-4" /></button></div> : <span />}
                 <button onClick={() => onSelectCar(featured)} className="inline-flex min-h-11 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white sm:hidden">Conhecer <ChevronRight className="h-4 w-4" /></button>
@@ -178,15 +207,21 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
 
       <section className="mx-auto max-w-[1380px] px-4 py-8 sm:px-8 sm:py-10">
         <div className="rounded-[28px] border border-black/5 bg-white p-4 shadow-[0_30px_80px_rgba(15,23,42,.16)] sm:p-6">
-          <form onSubmit={submitCatalogSearch} className="grid gap-3 lg:grid-cols-[1.7fr_.7fr_auto]">
-            <label className="flex min-h-14 items-center gap-3 rounded-2xl bg-slate-100 px-4 focus-within:ring-2 focus-within:ring-red-500">
+          <div className="mb-4"><p className="text-xs font-black uppercase tracking-[.16em] text-red-600">Busca inteligente</p><h2 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">Filtre o estoque do seu jeito</h2></div>
+          <form onSubmit={submitCatalogSearch} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label className="flex min-h-14 items-center gap-3 rounded-2xl bg-slate-100 px-4 focus-within:ring-2 focus-within:ring-red-500 sm:col-span-2">
               <Search className="h-5 w-5 text-slate-400" />
               <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Busque por modelo, versão ou combustível" className="min-w-0 flex-1 bg-transparent text-base font-medium outline-none placeholder:text-slate-400" />
             </label>
             <select aria-label="Filtrar por marca" value={brand} onChange={event => setBrand(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500">
               {brands.map(item => <option key={item}>{item}</option>)}
             </select>
-            <button type="submit" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 text-sm font-black text-white hover:bg-red-500">Buscar no estoque <ArrowRight className="h-4 w-4" /></button>
+            <select aria-label="Filtrar por condição" value={condition} onChange={event => setCondition(event.target.value as VehicleCondition)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500"><option value="">Usados e 0 km</option><option value="zero-km">Somente 0 km</option><option value="used">Somente usados</option></select>
+            <select aria-label="Filtrar por combustível" value={fuel} onChange={event => setFuel(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500"><option value="">Todos os combustíveis</option>{fuels.map(item => <option key={item}>{item}</option>)}</select>
+            <select aria-label="Filtrar por ano mínimo" value={minYear} onChange={event => setMinYear(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500"><option value="">Qualquer ano</option>{years.map(item => <option key={item} value={item}>A partir de {item}</option>)}</select>
+            <select aria-label="Filtrar por quilometragem" value={maxMileage} onChange={event => setMaxMileage(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500"><option value="">Qualquer quilometragem</option><option value="0">0 km</option><option value="30000">Até 30.000 km</option><option value="60000">Até 60.000 km</option><option value="100000">Até 100.000 km</option></select>
+            <select aria-label="Filtrar por preço máximo" value={maxPrice} onChange={event => setMaxPrice(event.target.value)} className="min-h-14 rounded-2xl border-0 bg-slate-100 px-4 text-sm font-bold outline-none focus:ring-2 focus:ring-red-500"><option value="">Qualquer preço</option><option value="70000">Até R$ 70 mil</option><option value="100000">Até R$ 100 mil</option><option value="150000">Até R$ 150 mil</option><option value="200000">Até R$ 200 mil</option><option value="300000">Até R$ 300 mil</option></select>
+            <button type="submit" className="inline-flex min-h-14 items-center justify-center gap-2 rounded-2xl bg-red-600 px-6 text-sm font-black text-white hover:bg-red-500 sm:col-span-2 lg:col-span-1">Buscar no estoque <ArrowRight className="h-4 w-4" /></button>
           </form>
         </div>
       </section>
