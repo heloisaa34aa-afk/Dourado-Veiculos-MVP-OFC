@@ -3,6 +3,7 @@ import {
   MAX_CAPTURE_BYTES,
   expectedStoragePath,
   isJpegBytes,
+  shouldExpireCaptureSession,
   validateCreateSessionInput,
   validateSlot,
   validateStoredJpegMetadata,
@@ -20,6 +21,17 @@ describe('vehicle-360-capture Edge validation', () => {
 
   it('creates one exact path for each session and slot', () => {
     expect(expectedStoragePath(sessionId, 3)).toBe(`360-capture/${sessionId}/3-capture.jpg`);
+  });
+
+  it('expires and cleans only unfinished active capture sessions', () => {
+    const now = new Date('2026-09-20T12:00:00.000Z').getTime();
+    const expiredAt = '2026-09-20T11:00:00.000Z';
+
+    expect(shouldExpireCaptureSession('active', expiredAt, now)).toBe(true);
+    expect(shouldExpireCaptureSession('completed', expiredAt, now)).toBe(false);
+    expect(shouldExpireCaptureSession('finalizing', expiredAt, now)).toBe(false);
+    expect(shouldExpireCaptureSession('cancelled', expiredAt, now)).toBe(false);
+    expect(shouldExpireCaptureSession('active', '2026-09-20T13:00:00.000Z', now)).toBe(false);
   });
 
   it('rejects a stored file larger than 5 MB', () => {

@@ -17,6 +17,25 @@ export function expectedStoragePath(sessionId: string, slotNumber: number) {
   return `360-capture/${sessionId}/${slotNumber}-capture.jpg`;
 }
 
+/**
+ * Only unfinished, active sessions may have their temporary captures removed
+ * after expiration. Completed sessions already use these objects as the
+ * published 360 frames, so deleting their folder would break the viewer.
+ */
+export function shouldExpireCaptureSession(
+  status: unknown,
+  expiresAt: unknown,
+  now = Date.now(),
+) {
+  const expiresAtTimestamp = typeof expiresAt === 'string'
+    ? new Date(expiresAt).getTime()
+    : Number.NaN;
+
+  return status === 'active'
+    && Number.isFinite(expiresAtTimestamp)
+    && expiresAtTimestamp <= now;
+}
+
 export function validateStoredJpegMetadata(metadata: { size?: unknown; mimetype?: unknown } | null | undefined) {
   const size = Number(metadata?.size);
   const mimetype = String(metadata?.mimetype ?? '').toLowerCase();

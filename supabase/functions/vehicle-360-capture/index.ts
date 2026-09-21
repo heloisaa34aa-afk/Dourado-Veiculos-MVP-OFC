@@ -5,6 +5,7 @@ import {
   expectedStoragePath,
   isJpegBytes,
   isUuid,
+  shouldExpireCaptureSession,
   validateCreateSessionInput,
   validateSlot,
   validateStoredJpegMetadata,
@@ -200,14 +201,15 @@ serve(async req => {
     if (sessionError) return reportInternal('session lookup failed', sessionError);
     if (!session) return respond({ error: 'Token inválido.' }, 404);
     if (session.status === 'cancelled') return respond({ error: 'Sessão cancelada.' }, 409);
-    if (session.status === 'expired' || new Date(session.expires_at).getTime() <= Date.now()) {
-      if (session.status === 'active') {
-        await supabaseAdmin
-          .from('vehicle_360_capture_sessions')
-          .update({ status: 'expired', updated_at: new Date().toISOString() })
-          .eq('id', session.id)
-          .eq('status', 'active');
-      }
+    if (session.status === 'expired') {
+      return respond({ error: 'Sessão expirada.' }, 410);
+    }
+    if (shouldExpireCaptureSession(session.status, session.expires_at)) {
+      await supabaseAdmin
+        .from('vehicle_360_capture_sessions')
+        .update({ status: 'expired', updated_at: new Date().toISOString() })
+        .eq('id', session.id)
+        .eq('status', 'active');
       try {
         await cleanupUnfinishedSession(supabaseAdmin, session.id);
       } catch (cleanupError) {
