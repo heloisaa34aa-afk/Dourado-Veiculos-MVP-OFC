@@ -5,17 +5,130 @@
   --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Base custom classes to match Corporate Modernism theme */
+:root {
+  color-scheme: light;
+  --brand-red: #ed101b;
+  --brand-red-dark: #bd0711;
+  --brand-ink: #080a0f;
+  --brand-surface: #f5f5f3;
+  --brand-line: rgba(15, 23, 42, .09);
+  --brand-shadow: 0 24px 70px rgba(15, 23, 42, .11);
+}
+
+* { box-sizing: border-box; }
+
 body {
   font-family: var(--font-sans);
   margin: 0;
-  background: #f3f4f6;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at 12% 4%, rgba(237, 16, 27, .055), transparent 27rem),
+    #f5f5f3;
+  color: #0b0d12;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; background: #080a0f; }
+::selection { background: rgba(237, 16, 27, .18); color: #080a0f; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button, a { touch-action: manipulation; }
+button, input, select, textarea { font: inherit; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 3px solid rgba(237, 16, 27, .3);
+  outline-offset: 3px;
+}
+img { color: transparent; }
+
+/* Reusable visual language shared by the showroom, vehicle page and admin. */
+.app-shell { background: var(--brand-surface); }
+.premium-surface {
+  border: 1px solid var(--brand-line);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 0 18px 55px rgba(15, 23, 42, .08);
+  backdrop-filter: blur(14px);
+}
+.premium-dark {
+  background:
+    radial-gradient(circle at 85% 8%, rgba(237, 16, 27, .2), transparent 26rem),
+    linear-gradient(145deg, #14171d 0%, #080a0f 60%, #050609 100%);
+}
+.pressable {
+  transform: translateZ(0);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background-color .22s ease, color .22s ease;
+}
+.pressable:hover { transform: translate3d(0, -2px, 0); }
+.pressable:active { transform: translate3d(0, 0, 0) scale(.985); }
+.image-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(110deg, transparent 25%, rgba(255,255,255,.18) 48%, transparent 70%);
+  transform: translateX(-130%);
+  transition: transform .9s cubic-bezier(.2,.7,.2,1);
+}
+.image-shine:hover::after { transform: translateX(130%); }
+.animate-enter { animation: enter-up .65s cubic-bezier(.2,.75,.25,1) both; }
+.animate-enter-delay { animation: enter-up .75s .12s cubic-bezier(.2,.75,.25,1) both; }
+.animate-soft-float { animation: soft-float 5s ease-in-out infinite; }
+.stagger-grid > * { animation: enter-up .55s cubic-bezier(.2,.75,.25,1) both; }
+.stagger-grid > *:nth-child(2) { animation-delay: .06s; }
+.stagger-grid > *:nth-child(3) { animation-delay: .12s; }
+.stagger-grid > *:nth-child(4) { animation-delay: .18s; }
+.stagger-grid > *:nth-child(5) { animation-delay: .24s; }
+.stagger-grid > *:nth-child(6) { animation-delay: .3s; }
+
+.admin-shell main .bg-white {
+  border-color: rgba(15, 23, 42, .075);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, .065);
+}
+.admin-shell main input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell main select,
+.admin-shell main textarea {
+  transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.admin-shell main input:not([type="checkbox"]):not([type="radio"]):focus,
+.admin-shell main select:focus,
+.admin-shell main textarea:focus {
+  border-color: rgba(237, 16, 27, .55);
+  box-shadow: 0 0 0 4px rgba(237, 16, 27, .09);
+}
+.admin-shell table { border-collapse: separate; border-spacing: 0; }
+.admin-shell tbody tr { transition: background-color .18s ease; }
+.admin-shell tbody tr:hover { background: rgba(248, 250, 252, .9); }
+.admin-kpi {
+  position: relative;
+  overflow: hidden;
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.admin-kpi::after {
+  content: "";
+  position: absolute;
+  right: -2rem;
+  bottom: -2.5rem;
+  width: 6rem;
+  height: 6rem;
+  border-radius: 999px;
+  background: rgba(237, 16, 27, .045);
+}
+.admin-kpi:hover { transform: translateY(-2px); box-shadow: 0 20px 45px rgba(15, 23, 42, .095); }
+
+@keyframes enter-up {
+  from { opacity: 0; transform: translate3d(0, 18px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+@keyframes soft-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -7px, 0); }
+}
+
+@media (max-width: 640px) {
+  .pressable:hover { transform: none; }
+  .stagger-grid > * { animation-duration: .38s; }
+  .mobile-safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+  .admin-shell main .bg-white { box-shadow: 0 8px 24px rgba(15, 23, 42, .055); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }

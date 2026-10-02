@@ -53,7 +53,7 @@ function FeaturedVehicleMedia({ car }: { car: Car }) {
     return () => { active = false; nextImage.onload = null; };
   }, [targetImage]);
 
-  return <div className="overflow-hidden rounded-[28px] border border-white/15 bg-black/45 shadow-[0_30px_90px_rgba(0,0,0,.45)] backdrop-blur">
+  return <div className="image-shine animate-enter-delay overflow-hidden rounded-[24px] border border-white/15 bg-black/45 shadow-[0_32px_100px_rgba(0,0,0,.5)] backdrop-blur sm:rounded-[32px]">
     <div className="relative aspect-[4/3] overflow-hidden bg-[#080a0e] sm:aspect-video">
       {displayedImage
         ? <img src={displayedImage} alt={`${car.brand} ${car.model}`} className="h-full w-full object-cover" fetchPriority="high" decoding="async" />
@@ -140,43 +140,44 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
   }
 
   return (
-    <main className="overflow-hidden bg-[#f3f4f6] text-slate-950">
-      <section className="relative isolate overflow-hidden bg-[linear-gradient(135deg,#ffffff_0%,#f7f7f8_55%,#eceff3_100%)]">
-        <div className="pointer-events-none absolute -left-24 top-20 h-64 w-64 rounded-full bg-red-600/10 blur-3xl" />
-        <div className="pointer-events-none absolute -right-20 bottom-0 h-80 w-80 rounded-full bg-slate-900/10 blur-3xl" />
+    <main className="overflow-hidden bg-[#f5f5f3] text-slate-950">
+      <section className="premium-dark relative isolate overflow-hidden text-white">
+        <div className="pointer-events-none absolute -left-24 top-20 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-0 h-96 w-96 rounded-full bg-red-900/20 blur-3xl" />
+        <div className="pointer-events-none absolute inset-0 opacity-[.035] [background-image:linear-gradient(rgba(255,255,255,.8)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.8)_1px,transparent_1px)] [background-size:48px_48px]" />
 
         <div className="relative mx-auto grid max-w-[1440px] gap-10 px-5 pb-24 pt-16 sm:px-8 sm:pt-20 lg:min-h-[680px] lg:grid-cols-[.82fr_1.18fr] lg:items-center lg:gap-16 lg:px-12 lg:pb-28">
-          <div>
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-100 bg-red-50 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[.16em] text-red-700">
+          <div className="animate-enter">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-red-400/25 bg-red-500/10 px-3.5 py-2 text-xs font-extrabold uppercase tracking-[.16em] text-red-300 backdrop-blur">
               <BadgeCheck className="h-4 w-4" /> Escolha com confiança
             </div>
-            <h1 className="max-w-xl text-[clamp(2.7rem,5.4vw,5.3rem)] font-black leading-[.95] tracking-[-.06em] text-slate-950">
-              O carro certo para o seu <span className="text-red-600">momento.</span>
+            <h1 className="max-w-xl text-[clamp(2.75rem,5.4vw,5.45rem)] font-black leading-[.93] tracking-[-.065em] text-white">
+              O carro certo para o seu <span className="bg-gradient-to-r from-red-400 to-red-600 bg-clip-text text-transparent">momento.</span>
             </h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
               Encontre opções selecionadas para o seu momento, compare os detalhes e escolha com segurança.
             </p>
 
             <div className="mt-8 flex flex-wrap gap-3">
-              <button onClick={() => navigate('/estoque')} className="inline-flex min-h-13 items-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-extrabold text-white transition hover:bg-red-600">
+              <button onClick={() => navigate('/estoque')} className="pressable inline-flex min-h-13 items-center gap-2 rounded-full bg-red-600 px-6 text-sm font-extrabold text-white shadow-[0_14px_38px_rgba(237,16,27,.25)] hover:bg-red-500">
                 Ver carros disponíveis <ArrowRight className="h-4 w-4" />
               </button>
-              <button onClick={() => document.getElementById('vehicle-match')?.scrollIntoView({ behavior: 'smooth' })} className="inline-flex min-h-13 items-center gap-2 rounded-full border border-slate-300 bg-white px-6 text-sm font-extrabold text-slate-800 shadow-sm transition hover:border-red-300 hover:text-red-700">
+              <button onClick={() => document.getElementById('vehicle-match')?.scrollIntoView({ behavior: 'smooth' })} className="pressable inline-flex min-h-13 items-center gap-2 rounded-full border border-white/15 bg-white/10 px-6 text-sm font-extrabold text-white backdrop-blur hover:bg-white/15">
                 Descobrir meu modelo <Sparkles className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-9 grid max-w-lg grid-cols-3 gap-3 border-t border-slate-200 pt-6">
-              <div><strong className="block text-lg font-black text-slate-950">Compra segura</strong><span className="text-xs text-slate-500">com transparência</span></div>
-              <div><strong className="block text-lg font-black text-slate-950">Estoque real</strong><span className="text-xs text-slate-500">atualizado</span></div>
-              <div><strong className="block text-lg font-black text-slate-950">Compare</strong><span className="text-xs text-slate-500">dados disponíveis</span></div>
+            <div className="mt-9 grid max-w-lg grid-cols-3 gap-3 border-t border-white/10 pt-6">
+              <div><strong className="block text-sm font-black text-white sm:text-base">Compra segura</strong><span className="text-[10px] text-slate-400 sm:text-xs">com transparência</span></div>
+              <div><strong className="block text-sm font-black text-white sm:text-base">Estoque real</strong><span className="text-[10px] text-slate-400 sm:text-xs">atualizado</span></div>
+              <div><strong className="block text-sm font-black text-white sm:text-base">Compare</strong><span className="text-[10px] text-slate-400 sm:text-xs">dados disponíveis</span></div>
             </div>
           </div>
 
           <div className="min-w-0">
             {featured ? <>
               <div className="mb-4 flex items-end justify-between gap-4">
-                <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-600">Destaque da vez</p><h2 className="mt-1 text-2xl font-black text-slate-950 sm:text-3xl">{featured.brand} {featured.model}</h2><p className="mt-1 text-sm font-semibold text-slate-500">{featured.version} · {featured.year}</p></div>
+                <div><p className="text-xs font-black uppercase tracking-[.18em] text-red-400">Destaque da vez</p><h2 className="mt-1 text-2xl font-black text-white sm:text-3xl">{featured.brand} {featured.model}</h2><p className="mt-1 text-sm font-semibold text-slate-400">{featured.version} · {featured.year}</p></div>
                 <button onClick={() => onSelectCar(featured)} className="hidden min-h-11 shrink-0 items-center gap-1 rounded-full bg-red-600 px-5 text-sm font-extrabold text-white hover:bg-red-500 sm:inline-flex">Conhecer <ChevronRight className="h-4 w-4" /></button>
               </div>
               <FeaturedVehicleMedia car={featured} />
@@ -189,8 +190,8 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1380px] px-4 py-8 sm:px-8 sm:py-10">
-        <div className="rounded-[24px] border border-black/5 bg-white p-4 shadow-[0_24px_65px_rgba(15,23,42,.14)] sm:rounded-[28px] sm:p-5">
+      <section className="relative z-10 mx-auto -mt-8 max-w-[1380px] px-4 pb-8 sm:-mt-10 sm:px-8 sm:pb-10">
+        <div className="premium-surface animate-enter-delay rounded-[24px] p-4 sm:rounded-[28px] sm:p-5">
           <div className="mb-3 flex items-end justify-between gap-3 sm:mb-4"><div><p className="text-[10px] font-black uppercase tracking-[.16em] text-red-600 sm:text-xs">Busca rápida</p><h2 className="mt-1 text-lg font-black text-slate-950 sm:text-xl">Qual carro você procura?</h2></div><button type="button" onClick={() => navigate('/estoque')} className="shrink-0 text-xs font-extrabold text-red-600 hover:text-red-700">Filtros detalhados</button></div>
           <form onSubmit={submitCatalogSearch} className="grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:grid-cols-[1.5fr_.75fr_auto] sm:gap-3">
             <label className="col-span-2 flex min-h-12 items-center gap-2.5 rounded-xl bg-slate-100 px-3.5 focus-within:ring-2 focus-within:ring-red-500 sm:col-span-1 sm:min-h-14 sm:rounded-2xl sm:px-4">
@@ -224,7 +225,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
 
         {carsError && <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-800">Não foi possível carregar o estoque agora. Tente novamente em instantes.</div>}
         {available.length ? (
-          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="stagger-grid grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {discoveryCars.map(car => <CarCard key={car.id} car={car} onSelect={onSelectCar} />)}
           </div>
         ) : (
@@ -237,7 +238,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
 
       {priceBands.length > 0 && <section className="mx-auto max-w-[1380px] px-4 pb-20 sm:px-8">
         <div className="mb-6"><p className="text-xs font-black uppercase tracking-[.2em] text-red-600">Faixa de investimento</p><h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">Comece pelo valor que faz sentido.</h2></div>
-        <div className="grid gap-4 md:grid-cols-3">{priceBands.map(band => <button key={band.label} onClick={() => navigate(catalogUrl({ minPrice: band.minPrice, maxPrice: band.maxPrice, sort: 'price-asc' }))} className="group rounded-[26px] border border-slate-200 bg-white p-6 text-left transition hover:-translate-y-1 hover:border-red-200 hover:shadow-xl"><span className="text-xs font-black uppercase tracking-wider text-slate-400">Explorar estoque</span><strong className="mt-3 block text-xl font-black group-hover:text-red-600">{band.label}</strong><span className="mt-2 block text-sm text-slate-500">{band.minPrice ? `A partir de ${formatCompactPrice(band.minPrice)}` : 'Opções de entrada'}{band.maxPrice ? ` · até ${formatCompactPrice(band.maxPrice)}` : ''}</span></button>)}</div>
+        <div className="stagger-grid grid gap-4 md:grid-cols-3">{priceBands.map(band => <button key={band.label} onClick={() => navigate(catalogUrl({ minPrice: band.minPrice, maxPrice: band.maxPrice, sort: 'price-asc' }))} className="group pressable premium-surface rounded-[26px] p-6 text-left hover:border-red-200"><span className="text-xs font-black uppercase tracking-wider text-slate-400">Explorar estoque</span><strong className="mt-3 block text-xl font-black group-hover:text-red-600">{band.label}</strong><span className="mt-2 block text-sm text-slate-500">{band.minPrice ? `A partir de ${formatCompactPrice(band.minPrice)}` : 'Opções de entrada'}{band.maxPrice ? ` · até ${formatCompactPrice(band.maxPrice)}` : ''}</span></button>)}</div>
       </section>}
 
       <VehicleMatchQuiz cars={available} onSelectCar={onSelectCar} onSubmitLead={onSubmitLead} />
@@ -245,7 +246,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
       <div className="mx-auto max-w-[1380px] px-4 sm:px-8"><PublicPromotion banners={banners} placement="home_inline" /></div>
 
       <section id="advantages-section" className="mx-auto grid max-w-[1380px] gap-5 px-4 py-20 sm:px-8 lg:grid-cols-2 lg:py-28">
-        <div className="flex min-h-[470px] flex-col justify-between rounded-[36px] bg-red-600 p-7 text-white sm:p-10">
+        <div className="premium-dark flex min-h-[470px] flex-col justify-between rounded-[32px] p-7 text-white shadow-2xl sm:rounded-[36px] sm:p-10">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15"><CarFront className="h-7 w-7" /></div>
           <div>
             <p className="mb-3 text-xs font-black uppercase tracking-[.2em] text-red-100">Compra transparente</p>
@@ -261,7 +262,7 @@ export default function ShowroomHome({ cars, loading, carsError, banners, onSele
             [Headphones, 'Atendimento', 'IA para dúvidas rápidas e vendedor quando precisar.'],
           ].map(([Icon, title, copy]) => {
             const ItemIcon = Icon as typeof ShieldCheck;
-            return <article key={String(title)} className="flex min-h-[220px] flex-col justify-between rounded-[30px] border border-slate-200 bg-white p-7"><ItemIcon className="h-7 w-7 text-red-600" /><div><h3 className="text-xl font-black">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{String(copy)}</p></div></article>;
+            return <article key={String(title)} className="pressable premium-surface flex min-h-[220px] flex-col justify-between rounded-[30px] p-7"><span className="grid h-12 w-12 place-items-center rounded-2xl bg-red-50"><ItemIcon className="h-6 w-6 text-red-600" /></span><div><h3 className="text-xl font-black">{String(title)}</h3><p className="mt-2 text-sm leading-6 text-slate-500">{String(copy)}</p></div></article>;
           })}
         </div>
       </section>

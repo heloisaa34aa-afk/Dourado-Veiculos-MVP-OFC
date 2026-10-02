@@ -367,7 +367,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="app-shell min-h-screen flex flex-col font-sans">
       {showPromotions && <PublicPromotion banners={publicBanners} placement="top_bar" />}
       {!isMobileCaptureRoute && (
         <Header 
@@ -764,10 +764,12 @@ export default function App() {
                 />
               </Suspense>
             ) : (
-              <div className="flex-1 flex items-center justify-center bg-slate-900 py-16 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-md w-full space-y-8 bg-slate-950 p-8 sm:p-10 rounded-3xl border border-slate-850 shadow-2xl">
+              <div className="premium-dark relative flex flex-1 items-center justify-center overflow-hidden px-4 py-16 sm:px-6 lg:px-8">
+                <div className="pointer-events-none absolute -left-24 top-1/3 h-72 w-72 rounded-full bg-red-600/20 blur-3xl" />
+                <div className="pointer-events-none absolute -right-28 bottom-0 h-80 w-80 rounded-full border-[70px] border-white/[.035]" />
+                <div className="animate-enter w-full max-w-md space-y-8 rounded-[30px] border border-white/10 bg-white/[.055] p-7 shadow-[0_35px_110px_rgba(0,0,0,.42)] backdrop-blur-xl sm:p-10">
                   <div className="text-center">
-                    <div className="mx-auto flex items-center justify-center h-14 w-14 rounded-2xl bg-red-500/10 text-red-500 mb-4 border border-red-500/10">
+                    <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl border border-red-400/20 bg-red-500/15 text-red-400 shadow-[0_12px_34px_rgba(237,16,27,.18)]">
                       <ShieldCheck className="h-7 w-7" />
                     </div>
                     <h2 className="text-2xl font-black text-white tracking-tight">Painel Administrativo</h2>
@@ -788,7 +790,7 @@ export default function App() {
                         required
                         value={adminEmail}
                         onChange={(e) => setAdminEmail(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600"
+                        className="min-h-13 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
                         placeholder="exemplo@douradoveiculos.com.br"
                       />
                     </div>
@@ -799,14 +801,14 @@ export default function App() {
                         required
                         value={adminPassword}
                         onChange={(e) => setAdminPassword(e.target.value)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600"
+                        className="min-h-13 w-full rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-sm text-white outline-none transition focus:border-red-500 focus:ring-4 focus:ring-red-500/10"
                         placeholder="••••••••"
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={adminLoading}
-                      className="w-full py-3.5 bg-red-600 hover:bg-red-700 disabled:bg-slate-700 text-white font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center"
+                      className="pressable flex min-h-14 w-full items-center justify-center rounded-2xl bg-red-600 py-3.5 text-sm font-bold text-white shadow-[0_14px_36px_rgba(237,16,27,.24)] hover:bg-red-500 disabled:bg-slate-700"
                     >
                       {adminLoading ? 'Autenticando...' : 'Entrar no Sistema'}
                     </button>

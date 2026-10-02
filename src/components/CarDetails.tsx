@@ -265,10 +265,10 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
   };
 
   return (
-    <div className="min-h-screen bg-[#f3f4f6] pb-28 lg:pb-16">
+    <div className="vehicle-details-page min-h-screen bg-[#f5f5f3] pb-28 lg:pb-16">
       
       {/* Top Banner & Breadcrumb */}
-      <div className="border-b border-white/10 bg-[#080a0e] py-4 text-white">
+      <div className="premium-dark border-b border-white/10 py-4 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <button
             onClick={onBack}
@@ -283,7 +283,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
         </div>
       </div>
 
-      <div className="mx-auto max-w-[1440px] space-y-10 px-3 pt-4 sm:px-8 sm:pt-8 lg:px-12">
+      <div className="animate-enter mx-auto max-w-[1440px] space-y-10 px-3 pt-4 sm:px-8 sm:pt-8 lg:px-12">
         
         {/* Core Detail Grid */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
@@ -301,7 +301,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
                   setGalleryPan({ x: 0, y: 0 });
                 }
               }}
-              className={`relative flex aspect-video select-none items-center justify-center overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_18px_45px_rgba(15,23,42,.16)] sm:rounded-[26px] sm:border sm:border-black/10 sm:bg-[#07090d] lg:rounded-[34px] lg:shadow-[0_28px_70px_rgba(15,23,42,.2)] ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
+              className={`image-shine relative flex aspect-video select-none items-center justify-center overflow-hidden rounded-[18px] bg-slate-100 shadow-[0_18px_45px_rgba(15,23,42,.16)] sm:rounded-[26px] sm:border sm:border-black/10 sm:bg-[#07090d] lg:rounded-[34px] lg:shadow-[0_28px_70px_rgba(15,23,42,.2)] ${currentItem?.type === 'image' ? 'cursor-pointer group' : ''}`}
             >
               
               {resolvingPrimaryMedia ? (
@@ -387,7 +387,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
 
           {/* Right Side: Primary purchase and actions card */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="space-y-5 rounded-[22px] bg-[#090b10] p-5 text-white shadow-[0_20px_55px_rgba(15,23,42,.16)] sm:space-y-6 sm:rounded-[28px] sm:p-6 lg:sticky lg:top-28 lg:p-7">
+            <div className="premium-dark space-y-5 rounded-[22px] p-5 text-white shadow-[0_24px_70px_rgba(15,23,42,.2)] sm:space-y-6 sm:rounded-[30px] sm:p-6 lg:sticky lg:top-28 lg:p-7">
               
               {/* Titles */}
               <div>
@@ -477,7 +477,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
           <div className="lg:col-span-8 space-y-8">
             
             {/* Description Card */}
-            <div className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+            <div className="premium-surface space-y-5 rounded-[24px] p-6 sm:p-8">
               <div>
                 <p className="text-xs font-black uppercase tracking-[.16em] text-red-600">Apresentação comercial</p>
                 <h3 className="mt-2 text-xl font-extrabold text-slate-900">Destaques deste veículo</h3>
@@ -489,7 +489,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
             </div>
 
             {/* Features (Itens de serie) */}
-            {car.features.length > 0 && <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm space-y-6">
+            {car.features.length > 0 && <div className="premium-surface space-y-6 rounded-[24px] p-6 sm:p-8">
               <h3 className="font-extrabold text-xl text-slate-900">Itens de Série &amp; Acessórios</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {car.features.map((feature, idx) => (
@@ -508,7 +508,7 @@ export default function CarDetails({ car, onBack, onSubmitLead, banners = [], re
           <div className="lg:col-span-4 space-y-8">
             
             {/* Technical spec card */}
-            {(car.color || car.plateEnd) && <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm space-y-5">
+            {(car.color || car.plateEnd) && <div className="premium-surface space-y-5 rounded-[24px] p-6">
               <h3 className="font-extrabold text-lg text-slate-900">Ficha Técnica</h3>
               <div className="space-y-3 text-xs sm:text-sm">
                 {car.color && <div className="flex justify-between py-2 border-b border-slate-100">

@@ -526,13 +526,13 @@ export default function AdminPanel({
   }, [messages, leadSearch]);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row">
+    <div className="admin-shell min-h-screen bg-[#f5f5f3] flex flex-col md:flex-row">
       
       {/* Sidebar navigation */}
-      <aside className="sticky top-[72px] z-50 w-full md:static md:w-64 bg-slate-900 text-white shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-slate-800">
-        <div className="hidden p-6 border-b border-slate-800 md:block">
+      <aside className="premium-dark sticky top-[68px] z-50 flex w-full shrink-0 flex-col border-b border-white/10 text-white shadow-2xl sm:top-[74px] md:top-[78px] md:h-[calc(100dvh-78px)] md:w-[272px] md:border-b-0 md:border-r">
+        <div className="hidden border-b border-white/10 p-6 md:block">
           <div className="flex items-center gap-2">
-            <div className="bg-red-600 text-white p-2 rounded-xl">
+            <div className="bg-gradient-to-br from-red-500 to-red-700 text-white p-2.5 rounded-[14px] shadow-[0_10px_28px_rgba(237,16,27,.25)]">
               <Car className="w-5 h-5" />
             </div>
             <div>
@@ -548,7 +548,7 @@ export default function AdminPanel({
             aria-label="Navegar no painel administrativo"
             value={activeSection}
             onChange={(event) => setActiveSection(event.target.value as typeof activeSection)}
-            className="min-h-12 w-full rounded-xl border border-slate-700 bg-slate-800 px-4 text-sm font-bold text-white outline-none focus:border-red-500"
+            className="min-h-12 w-full rounded-2xl border border-white/10 bg-white/[.07] px-4 text-sm font-bold text-white outline-none backdrop-blur focus:border-red-500"
           >
             <option value="dashboard">Painel geral</option>
             <option value="vehicles">Gerenciar veículos ({cars.length})</option>
@@ -563,7 +563,7 @@ export default function AdminPanel({
           </select>
         </div>
 
-        <nav className="hidden p-4 md:flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible no-scrollbar">
+        <nav className="no-scrollbar hidden gap-1 overflow-y-auto p-4 md:flex md:flex-col">
           <button
             onClick={() => setActiveSection('dashboard')}
             className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all cursor-pointer whitespace-nowrap md:w-full ${
@@ -619,7 +619,7 @@ export default function AdminPanel({
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
                 activeSection === 'trackingLab'
                   ? 'bg-indigo-600 text-white shadow-md'
-                  : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white'
               }`}
             >
               <Activity className={`w-5 h-5 ${activeSection === 'trackingLab' ? 'text-white' : 'text-slate-400'}`} />
@@ -682,8 +682,8 @@ export default function AdminPanel({
           </button>
         </nav>
 
-        <div className="hidden md:block mt-auto p-4 border-t border-slate-800 bg-slate-950/40">
-          <div className="flex items-center gap-3 p-2 bg-slate-900 rounded-xl">
+        <div className="mt-auto hidden border-t border-white/10 bg-black/20 p-4 md:block">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-2.5">
             <div className="w-8 h-8 rounded-full bg-red-600 text-white font-bold flex items-center justify-center text-xs">
               JD
             </div>
@@ -696,14 +696,14 @@ export default function AdminPanel({
       </aside>
 
       {/* Main dashboard viewport */}
-      <main className={`flex-1 min-w-0 w-full overflow-x-hidden ${
+      <main className={`flex-1 min-w-0 w-full overflow-x-hidden bg-[#f5f5f3] ${
         activeSection === 'trackingLab' 
           ? 'h-[calc(100vh-64px)] flex flex-col min-h-0 min-w-0' // assuming 64px is header or we just use h-full if admin panel has no top header for desktop
           : 'p-4 sm:p-8 max-w-7xl mx-auto space-y-8'
       }`}>
         
         {/* Top welcome banner */}
-        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200">
+        <header className="premium-surface animate-enter flex flex-col justify-between gap-4 rounded-[24px] p-5 sm:flex-row sm:items-center sm:rounded-[28px] sm:p-6">
           <div>
             <h2 className="font-extrabold text-2xl text-slate-900 tracking-tight sm:text-3xl">
               {activeSection === 'dashboard' && 'Visão Geral do Negócio'}
@@ -760,9 +760,9 @@ export default function AdminPanel({
           <div className="space-y-8">
             
             {/* KPI Bento Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="stagger-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               
-              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+              <div className="admin-kpi bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                 <div className="bg-red-50 text-red-600 p-3.5 rounded-xl">
                   <Car className="w-6 h-6" />
                 </div>
@@ -772,7 +772,7 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+              <div className="admin-kpi bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                 <div className="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
@@ -784,7 +784,7 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+              <div className="admin-kpi bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                 <div className="bg-blue-50 text-blue-600 p-3.5 rounded-xl">
                   <Phone className="w-6 h-6" />
                 </div>
@@ -794,7 +794,7 @@ export default function AdminPanel({
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
+              <div className="admin-kpi bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-4">
                 <div className="bg-amber-50 text-amber-600 p-3.5 rounded-xl">
                   <MessageSquare className="w-6 h-6" />
                 </div>

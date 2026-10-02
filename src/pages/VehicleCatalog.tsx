@@ -29,15 +29,16 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
   const activeFilterCount = [filters.brand, filters.category, filters.fuel, filters.condition, filters.minPrice, filters.maxPrice, filters.minYear, filters.maxYear, filters.minMileage, filters.maxMileage].filter(value => value !== '' && value !== undefined).length;
 
   return (
-    <main className="min-h-screen bg-[#f3f4f6] text-slate-950">
-      <section className="border-b border-white/10 bg-[#090b10] px-4 py-10 text-white sm:px-8 sm:py-14">
+    <main className="min-h-screen bg-[#f5f5f3] text-slate-950">
+      <section className="premium-dark relative overflow-hidden border-b border-white/10 px-4 py-10 text-white sm:px-8 sm:py-16">
+        <div className="pointer-events-none absolute right-[-8rem] top-[-10rem] h-96 w-96 rounded-full border-[70px] border-red-600/10" />
         <div className="mx-auto max-w-[1380px]">
           <button onClick={() => navigate('/')} className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm font-bold text-slate-300 hover:text-white"><ArrowLeft className="h-4 w-4" /> Voltar ao início</button>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div><p className="text-xs font-black uppercase tracking-[.2em] text-red-500">Estoque Dourado</p><h1 className="mt-2 text-4xl font-black tracking-[-.05em] sm:text-6xl">Encontre seu próximo carro.</h1></div>
-            <p className="text-sm text-slate-400">{results.length} veículo{results.length === 1 ? '' : 's'} encontrado{results.length === 1 ? '' : 's'}</p>
+            <div className="animate-enter"><p className="text-xs font-black uppercase tracking-[.2em] text-red-400">Estoque Dourado</p><h1 className="mt-2 max-w-3xl text-4xl font-black tracking-[-.055em] sm:text-6xl">Escolha com calma.<br/><span className="text-slate-400">Dirija com certeza.</span></h1></div>
+            <p className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-bold text-slate-300 backdrop-blur">{results.length} veículo{results.length === 1 ? '' : 's'} encontrado{results.length === 1 ? '' : 's'}</p>
           </div>
-          <label className="mt-8 flex min-h-14 items-center gap-3 rounded-2xl bg-white px-4 text-slate-950 shadow-xl sm:max-w-3xl">
+          <label className="animate-enter-delay mt-8 flex min-h-14 items-center gap-3 rounded-2xl border border-white/10 bg-white px-4 text-slate-950 shadow-[0_22px_60px_rgba(0,0,0,.25)] sm:max-w-3xl sm:min-h-16 sm:rounded-[20px]">
             <Search className="h-5 w-5 text-slate-400" />
             <input aria-label="Buscar veículos" value={filters.query} onChange={event => update({ query: event.target.value })} placeholder="Marca, modelo, versão ou ano" className="min-w-0 flex-1 bg-transparent text-base outline-none" />
             {filters.query && <button onClick={() => update({ query: '' })} aria-label="Limpar busca"><X className="h-5 w-5" /></button>}
@@ -46,7 +47,7 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
       </section>
 
       <div className="mx-auto grid max-w-[1380px] gap-8 px-4 py-8 sm:px-8 lg:grid-cols-[280px_1fr] lg:py-12">
-        <aside className="hidden self-start rounded-[26px] border border-slate-200 bg-white p-5 lg:block lg:sticky lg:top-28">
+        <aside className="premium-surface hidden self-start rounded-[26px] p-5 lg:block lg:sticky lg:top-28">
           <div className="mb-5 flex items-center justify-between"><h2 className="font-black">Filtros</h2>{activeFilterCount > 0 && <button onClick={clear} className="text-xs font-bold text-red-600">Limpar</button>}</div>
           <FilterFields filters={filters} brands={brands} categories={categories} fuels={fuels} years={years} update={update} />
         </aside>
@@ -62,12 +63,12 @@ export default function VehicleCatalog({ cars, loading, error, onSelectCar }: Ve
           {loading && cars.length === 0 ? <div aria-busy="true" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{[0,1,2,3,4,5].map(item => <div key={item} className="h-[430px] animate-pulse rounded-[28px] bg-white" />)}</div>
             : error && cars.length === 0 ? <CatalogMessage title="Não foi possível carregar o estoque" copy="Tente novamente em alguns instantes." />
             : results.length === 0 ? <CatalogMessage title="Nenhum veículo encontrado" copy="Ajuste os filtros ou veja novamente todo o estoque." action={clear} />
-            : <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{results.map(car => <CarCard key={car.id} car={car} onSelect={onSelectCar} />)}</div>}
+            : <div className="stagger-grid grid gap-5 sm:grid-cols-2 xl:grid-cols-3">{results.map(car => <CarCard key={car.id} car={car} onSelect={onSelectCar} />)}</div>}
         </section>
       </div>
 
       {mobileFiltersOpen && <div className="fixed inset-0 z-[1000] flex items-end bg-black/65 lg:hidden" role="dialog" aria-modal="true" aria-label="Filtros do estoque" onClick={() => setMobileFiltersOpen(false)}>
-        <div className="max-h-[88dvh] w-full overflow-y-auto rounded-t-[30px] bg-white p-5 pb-8" onClick={event => event.stopPropagation()}>
+        <div className="animate-enter mobile-safe-bottom max-h-[88dvh] w-full overflow-y-auto rounded-t-[30px] bg-white p-5 pb-8 shadow-2xl" onClick={event => event.stopPropagation()}>
           <div className="mb-5 flex items-center justify-between"><div><p className="text-xs font-black uppercase tracking-wider text-red-600">Refine sua busca</p><h2 className="text-2xl font-black">Filtros</h2></div><button onClick={() => setMobileFiltersOpen(false)} className="grid h-11 w-11 place-items-center rounded-full bg-slate-100" aria-label="Fechar filtros"><X className="h-5 w-5" /></button></div>
           <FilterFields filters={filters} brands={brands} categories={categories} fuels={fuels} years={years} update={update} />
           <div className="mt-6 grid grid-cols-2 gap-3"><button onClick={clear} className="min-h-12 rounded-2xl border border-slate-300 font-bold">Limpar</button><button onClick={() => setMobileFiltersOpen(false)} className="min-h-12 rounded-2xl bg-red-600 font-bold text-white">Ver {results.length} veículos</button></div>

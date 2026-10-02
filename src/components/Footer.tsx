@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Phone, Award, Clock, ArrowUp, ShieldAlert } from 'lucide-react';
+import { Phone, BadgeCheck, Clock, ArrowUp, ShieldAlert, CarFront, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface FooterProps {
@@ -16,26 +16,25 @@ export default function Footer({ onAdminClick }: FooterProps) {
   };
 
   return (
-    <footer className="w-full bg-slate-950 text-slate-400 mt-auto">
-      {/* Top Banner with high credibility chips */}
-      <div className="border-b border-slate-900 bg-slate-900/50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center sm:text-left">
-          <div className="flex items-center gap-4 justify-center sm:justify-start">
-            <Award className="w-8 h-8 text-red-500 shrink-0" />
+    <footer className="mt-auto w-full overflow-hidden bg-[#080a0f] text-slate-400">
+      <div className="border-b border-white/[.07] bg-white/[.025] py-7">
+        <div className="mx-auto grid max-w-[1380px] grid-cols-1 gap-5 px-5 text-left sm:grid-cols-3 sm:px-8 lg:px-12">
+          <div className="flex items-center gap-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-600/15"><BadgeCheck className="h-5 w-5 text-red-500" /></span>
             <div>
               <h4 className="text-white font-bold text-sm">Informações do veículo</h4>
               <p className="text-xs text-slate-400">Consulte os dados disponíveis em cada anúncio.</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 justify-center sm:justify-start">
-            <Clock className="w-8 h-8 text-red-500 shrink-0" />
+          <div className="flex items-center gap-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-600/15"><Clock className="h-5 w-5 text-red-500" /></span>
             <div>
               <h4 className="text-white font-bold text-sm">Atendimento Ágil</h4>
               <p className="text-xs text-slate-400">Continue a conversa pelos canais oficiais da loja.</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 justify-center sm:justify-start">
-            <Phone className="w-8 h-8 text-red-500 shrink-0" />
+          <div className="flex items-center gap-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-red-600/15"><Phone className="h-5 w-5 text-red-500" /></span>
             <div>
               <h4 className="text-white font-bold text-sm">Financiamento Facilitado</h4>
               <p className="text-xs text-slate-400">Solicite uma simulação inicial com a equipe.</p>
@@ -44,26 +43,19 @@ export default function Footer({ onAdminClick }: FooterProps) {
         </div>
       </div>
 
-      {/* Main Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-12">
-        
-        {/* Col 1: Brand details */}
-        <div className="md:col-span-5 space-y-6">
-          <div className="flex items-center gap-2">
-            <div className="bg-red-600 text-white p-2 rounded-lg">
-              <Award className="w-5 h-5" />
-            </div>
-            <span className="font-extrabold text-2xl tracking-tight text-white">
-              Dourado <span className="text-red-600">Veículos</span>
-            </span>
+      <div className="mx-auto grid max-w-[1380px] grid-cols-1 gap-10 px-5 py-14 sm:px-8 md:grid-cols-12 lg:px-12 lg:py-20">
+        <div className="space-y-6 md:col-span-6">
+          <div className="flex items-center gap-3">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white shadow-[0_10px_30px_rgba(237,16,27,.25)]"><CarFront className="h-5 w-5" /></span>
+            <span><strong className="block text-2xl font-black tracking-[-.05em] text-white">Dourado<span className="text-red-500">.</span></strong><small className="text-[9px] font-black uppercase tracking-[.26em] text-slate-600">Veículos</small></span>
           </div>
-          <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
+          <p className="max-w-md text-sm leading-7 text-slate-400">
             Consulte o estoque disponível, compare as informações publicadas e fale com a equipe para continuar seu atendimento.
           </p>
+          <a href="/estoque" className="pressable inline-flex min-h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-black text-slate-950">Conhecer o estoque <ArrowRight className="h-4 w-4" /></a>
         </div>
 
-        {/* Col 2: Navigation Links */}
-        <div className="md:col-span-3 space-y-4">
+        <div className="space-y-4 md:col-span-3">
           <h4 className="text-white font-bold text-sm tracking-wider uppercase">Menu</h4>
           <ul className="space-y-2.5 text-sm">
             <li>
@@ -89,8 +81,7 @@ export default function Footer({ onAdminClick }: FooterProps) {
           </ul>
         </div>
 
-        {/* Col 3: Contact */}
-        <div className="md:col-span-4 space-y-4">
+        <div className="space-y-4 md:col-span-3">
           <h4 className="text-white font-bold text-sm tracking-wider uppercase">Atendimento</h4>
           <div className="flex items-start gap-3 text-sm">
             <Phone className="mt-0.5 h-5 w-5 shrink-0 text-red-500" />
@@ -99,16 +90,15 @@ export default function Footer({ onAdminClick }: FooterProps) {
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="border-t border-slate-900 py-8 bg-slate-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div className="border-t border-white/[.07] bg-black/20 py-6">
+        <div className="mx-auto flex max-w-[1380px] flex-col items-center justify-between gap-4 px-5 sm:flex-row sm:px-8 lg:px-12">
           <p className="text-xs text-slate-500">
             &copy; 2026 Dourado Veículos. Todos os direitos reservados.
           </p>
           <motion.button
             whileHover={{ scale: 1.1, y: -2 }}
             onClick={scrollToTop}
-            className="p-3 bg-slate-900 hover:bg-slate-800 text-white rounded-full transition-all cursor-pointer shadow-md"
+            className="pressable grid h-11 w-11 place-items-center rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10"
             title="Voltar ao topo"
           >
             <ArrowUp className="w-4 h-4" />
